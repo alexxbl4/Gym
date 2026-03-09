@@ -3,143 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Gym Pro Elite</title>
+    <title>Gym Pro V11</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #000; color: white; 
-            -webkit-tap-highlight-color: transparent;
-            overscroll-behavior: none; /* Evita el rebote en iOS */
-        }
-        .glass { background: #121214; border: 1px solid rgba(255,255,255,0.08); }
-        .input-gym { background: #1c1c1e; border-radius: 12px; text-align: center; font-weight: bold; padding: 10px; outline: none; width: 100%; font-size: 16px; color: white; border: 1px solid transparent; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; -webkit-tap-highlight-color: transparent; }
+        .glass { background: #111; border: 1px solid #222; border-radius: 24px; }
+        .input-gym { background: #1c1c1e; border-radius: 10px; text-align: center; font-weight: bold; padding: 8px; outline: none; width: 100%; color: white; border: 1px solid transparent; }
         .input-gym:focus { border-color: #3b82f6; }
-        .row-done { background: rgba(16, 185, 129, 0.15) !important; border: 1px solid #10b981 !important; }
+        .row-done { background: rgba(16, 185, 129, 0.2) !important; border-color: #10b981 !important; }
         .hidden { display: none !important; }
-        .tab-active { color: #3b82f6; }
         .bar { width: 100%; background: #1e3a8a; border-radius: 4px 4px 0 0; position: relative; }
-        .bar::after { content: attr(data-value); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 8px; font-weight: bold; color: #3b82f6; }
-        /* Safe Area para iPhones modernos */
-        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        .safe-pt { padding-top: env(safe-area-inset-top); }
+        .bar::after { content: attr(data-v); position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 8px; color: #3b82f6; font-weight: 800; }
     </style>
 </head>
-<body class="safe-pt">
+<body class="pb-28">
 
-    <div id="rest-overlay" class="hidden fixed top-0 left-0 right-0 z-[200] bg-blue-600 p-6 text-center shadow-2xl safe-pt">
-        <div class="flex justify-between items-center max-w-md mx-auto">
-            <div class="text-left">
-                <p class="text-[10px] font-black uppercase opacity-70">Descanso</p>
-                <p id="rest-clock" class="text-3xl font-black">01:30</p>
-            </div>
-            <button onclick="stopRest()" class="bg-black/20 px-6 py-3 rounded-2xl font-black text-sm">SALTAR</button>
-        </div>
+    <div id="rest-overlay" class="hidden fixed top-0 left-0 right-0 z-[100] bg-blue-600 p-6 flex justify-between items-center shadow-2xl">
+        <div class="text-left"><p class="text-[10px] font-black uppercase opacity-70">Descanso</p><p id="rest-clock" class="text-3xl font-black">01:30</p></div>
+        <button onclick="stopRest()" class="bg-black/20 px-6 py-3 rounded-2xl font-black text-sm">SALTAR</button>
     </div>
 
-    <div id="screen-main" class="p-6 pb-32">
-        <header class="py-10">
-            <h1 class="text-4xl font-black italic tracking-tighter">GYM<span class="text-blue-500">PRO</span></h1>
-            <p class="text-zinc-500 font-bold text-xs uppercase mt-1">Mis Rutinas</p>
-        </header>
+    <div id="screen-main" class="p-6">
+        <header class="py-10"><h1 class="text-4xl font-black italic">GYM<span class="text-blue-500">PRO</span></h1></header>
         <div id="routine-list" class="space-y-4"></div>
-        <button onclick="openEditor()" class="w-full mt-8 py-5 border-2 border-dashed border-zinc-800 rounded-[2.5rem] text-zinc-400 font-bold flex items-center justify-center gap-2">
-            <i data-lucide="plus"></i> Crear Nueva Rutina
-        </button>
+        <button onclick="openEditor()" class="w-full mt-8 py-5 border-2 border-dashed border-zinc-800 rounded-[2rem] text-zinc-500 font-bold">+ Nueva Rutina</button>
     </div>
 
-    <div id="screen-editor" class="hidden fixed inset-0 bg-black z-[100] overflow-y-auto p-6 pb-32 safe-pt">
-        <header class="flex justify-between items-center mb-8">
-            <button onclick="closeEditor()" class="text-zinc-500 font-bold flex items-center gap-1"><i data-lucide="chevron-left"></i> Atrás</button>
-            <h2 class="text-lg font-black italic uppercase">Diseño</h2>
-            <button onclick="saveRoutine()" class="bg-blue-600 px-6 py-2 rounded-xl font-black text-xs">GUARDAR</button>
+    <div id="screen-session" class="hidden fixed inset-0 bg-black z-[60] overflow-y-auto pb-40">
+        <header class="p-6 bg-zinc-950 sticky top-0 z-10 border-b border-zinc-900 flex justify-between items-center">
+            <div><h2 id="ses-title" class="text-xl font-black italic">Entreno</h2><p id="ses-timer" class="text-blue-500 font-mono text-xs font-bold">00:00</p></div>
+            <button onclick="finishSession()" class="bg-green-600 px-6 py-3 rounded-2xl font-black text-xs">TERMINAR</button>
         </header>
-        <input type="text" id="ed-name" placeholder="Nombre Rutina" class="w-full bg-zinc-900 rounded-2xl p-4 font-bold mb-4 outline-none border border-white/5">
-        <div class="glass p-5 rounded-3xl mb-6 flex justify-between items-center">
-            <span class="text-xs font-bold text-zinc-500 uppercase">Descanso Predet. (seg)</span>
-            <input type="number" id="ed-rest" value="90" class="w-20 bg-transparent text-right font-black text-blue-500 outline-none text-xl">
-        </div>
-        <div id="ed-exercises" class="space-y-4"></div>
-        <button onclick="addExerciseToEditor()" class="w-full mt-6 py-4 bg-zinc-900 rounded-2xl font-bold text-blue-500">+ Añadir Ejercicio</button>
+        <main id="ses-exercises" class="p-4 space-y-6"></main>
     </div>
 
-    <div id="screen-session" class="hidden fixed inset-0 bg-black z-[150] overflow-y-auto pb-40 safe-pt">
-        <header class="p-6 bg-zinc-950/90 backdrop-blur-md sticky top-0 z-10 border-b border-white/5 flex justify-between items-center">
-            <div>
-                <h2 id="ses-title" class="text-xl font-black italic truncate max-w-[150px]">Entrenando</h2>
-                <div class="flex gap-4 text-[10px] font-bold mt-1">
-                    <span id="ses-timer" class="text-blue-500 font-mono">00:00</span>
-                    <span class="text-zinc-500">VOL: <span id="ses-vol" class="text-white">0</span> KG</span>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="cancelSession()" class="bg-zinc-800 text-zinc-400 px-4 py-3 rounded-2xl font-black text-xs">SALIR</button>
-                <button onclick="finishSession()" class="bg-green-600 px-6 py-3 rounded-2xl font-black text-xs">TERMINAR</button>
-            </div>
-        </header>
-        <main id="ses-exercises" class="p-4 space-y-6 mt-2"></main>
-    </div>
-
-    <div id="screen-progress" class="hidden p-6 pb-32">
-        <header class="py-10"><h1 class="text-4xl font-black italic tracking-tighter uppercase">Records</h1></header>
+    <div id="screen-progress" class="hidden p-6">
+        <header class="py-10"><h1 class="text-4xl font-black italic">PROGRESO</h1></header>
         <div id="progress-list" class="space-y-4"></div>
     </div>
 
-    <div id="progress-modal" class="hidden fixed inset-0 bg-black z-[180] overflow-y-auto p-6 safe-pt">
-        <div class="flex justify-between items-center mb-8">
-            <button onclick="closeProgressModal()" class="text-zinc-500 font-bold flex items-center gap-1"><i data-lucide="chevron-left"></i> Atrás</button>
-            <h2 id="modal-ex-name" class="text-lg font-black text-blue-500 italic uppercase">Ejercicio</h2>
-            <div class="w-10"></div> </div>
-        <div class="glass p-6 rounded-[2.5rem] mb-6">
-            <div id="chart-container" class="flex items-end justify-between h-40 gap-2 px-2 border-b border-zinc-800"></div>
-        </div>
-        <div id="history-log" class="space-y-3"></div>
+    <div id="screen-editor" class="hidden fixed inset-0 bg-black z-[70] overflow-y-auto p-6">
+        <header class="flex justify-between mb-6"><button onclick="closeEditor()">Atrás</button><button onclick="saveRoutine()" class="bg-blue-500 px-6 py-2 rounded-xl font-black text-xs">GUARDAR</button></header>
+        <input type="text" id="ed-name" placeholder="Nombre Rutina" class="w-full bg-zinc-900 rounded-2xl p-4 font-bold mb-4 outline-none">
+        <div class="glass p-4 mb-6 flex justify-between items-center"><span class="text-xs font-bold">Descanso (Seg)</span><input type="number" id="ed-rest" value="90" class="w-16 bg-transparent text-right font-black text-blue-500 outline-none"></div>
+        <div id="ed-exercises" class="space-y-4"></div>
+        <button onclick="addExEd()" class="w-full mt-6 py-4 bg-zinc-900 rounded-2xl font-bold text-zinc-500">+ Ejercicio</button>
     </div>
 
-    <nav class="fixed bottom-0 left-0 right-0 h-24 bg-zinc-950/90 backdrop-blur-xl border-t border-white/5 flex justify-around items-center px-8 z-50 safe-pb">
-        <button onclick="nav('main')" id="n-main" class="flex flex-col items-center tab-active"><i data-lucide="dumbbell"></i><span class="text-[10px] font-bold mt-1">Rutinas</span></button>
-        <button onclick="nav('progress')" id="n-progress" class="flex flex-col items-center text-zinc-600"><i data-lucide="bar-chart"></i><span class="text-[10px] font-bold mt-1">Progreso</span></button>
+    <div id="prog-modal" class="hidden fixed inset-0 bg-black z-[110] p-6 overflow-y-auto">
+        <div class="flex justify-between mb-8 items-center"><h2 id="modal-name" class="text-2xl font-black text-blue-500"></h2><button onclick="closeProg()"><i data-lucide="x"></i></button></div>
+        <div class="glass p-6 mb-6"><div id="chart" class="flex items-end justify-between h-40 gap-1 border-b border-zinc-800"></div></div>
+        <div id="modal-logs" class="space-y-2"></div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 h-24 bg-zinc-950/90 backdrop-blur-md border-t border-zinc-900 flex justify-around items-center px-8 z-40">
+        <button onclick="nav('main')" class="flex flex-col items-center" id="btn-main"><i data-lucide="dumbbell"></i><span class="text-[10px] font-bold">Rutinas</span></button>
+        <button onclick="nav('progress')" class="flex flex-col items-center text-zinc-600" id="btn-prog"><i data-lucide="bar-chart"></i><span class="text-[10px] font-bold">Progreso</span></button>
     </nav>
 
-    <script>
-        // --- PERSISTENCIA Y ESTADO ---
-        let routines = JSON.parse(localStorage.getItem('gym_v11_routines')) || {};
-        let history = JSON.parse(localStorage.getItem('gym_v11_history')) || {};
-        let session = { active: false, start: null, timer: null, data: null, rest: 90 };
-        let restInt = null, tempEd = [];
+<script>
+    let routines = JSON.parse(localStorage.getItem('gym_v11_final')) || { "Ejemplo Pecho": {rest:90, exercises:[{name:"Press Banca", sets:[{weight:60, reps:10}]}]} };
+    let history = JSON.parse(localStorage.getItem('gym_v11_hist')) || {};
+    let session = { start: null, timer: null, data: null, rest: 90 };
+    let restInt = null, tempEd = [];
 
-        // --- NAVEGACIÓN ---
-        function nav(s) {
-            if(session.active && s !== 'main') {
-                if(!confirm("Tienes un entrenamiento activo. ¿Deseas salir a ver el progreso? El reloj seguirá contando.")) return;
-            }
-            document.getElementById('screen-main').classList.toggle('hidden', s!=='main');
-            document.getElementById('screen-progress').classList.toggle('hidden', s!=='progress');
-            document.getElementById('n-main').classList.toggle('tab-active', s==='main');
-            document.getElementById('n-progress').classList.toggle('tab-active', s==='progress');
-            if(s==='progress') renderProgressList();
-            if(s==='main') renderRoutines();
-            lucide.createIcons();
-        }
+    function nav(s) {
+        document.getElementById('screen-main').classList.toggle('hidden', s!=='main');
+        document.getElementById('screen-progress').classList.toggle('hidden', s!=='progress');
+        document.getElementById('btn-main').classList.toggle('text-blue-500', s==='main');
+        document.getElementById('btn-prog').classList.toggle('text-blue-500', s==='progress');
+        if(s==='main') renderRoutines(); else renderProgList();
+    }
 
-        // --- EDITOR (CORREGIDO) ---
-        function openEditor(name = null) {
-            document.getElementById('screen-editor').classList.remove('hidden');
-            document.getElementById('ed-name').value = name || "";
-            const r = routines[name] || { rest: 90, exercises: [] };
-            document.getElementById('ed-rest').value = r.rest;
-            tempEd = JSON.parse(JSON.stringify(r.exercises));
-            renderEditor();
-        }
-        function closeEditor() { document.getElementById('screen-editor').classList.add('hidden'); }
-        function renderEditor() {
-            const cont = document.getElementById('ed-exercises');
-            cont.innerHTML = tempEd.map((ex, i) => `
-                <div class="glass p-5 rounded-3xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <input type="text
+    function renderRoutines() {
+        const div = document.getElementById('routine-list');
+        div.innerHTML = Object.keys(routines).map(n => `
+            <div class="glass p-6"><div class="flex justify-between mb-4"><div><h3 class="text-xl font-black">${n}</h3><p class="text-[10px] text-zinc-500 uppercase">${routines[n].exercises.length} Ejercicios</p></div><button onclick="openEditor('${n}')" class="text-zinc-600"><i data-lucide="settings"></i></button></div>
+            <button onclick="startSes('${n}')" class="w-full bg-blue-600 py-4 rounded-2xl font-black">ENTRENAR</button></div>
+        `).join('');
+        lucide.createIcons();
+    }
 
+    function openEditor(n=null) {
+        document.getElementById('screen-editor').classList.remove('hidden');
+        document.getElementById('ed-name').value = n || "";
+        const r = routines[n] || {rest:90, exercises:[]};
+        document.getElementById('ed-rest').value = r.rest;
+        tempEd = JSON.parse(JSON.stringify(r.exercises));
+        renderEd();
+    }
+    function renderEd() {
+        document.getElementById('ed-exercises').innerHTML = tempEd.map((ex,i) => `
+            <div class="glass p-4"><div class="flex justify-between mb-4"><input onchange="tempEd[${i}].name=this.value" value="${ex.name}" class="bg-transparent font-black text-blue-500 outline-none">
+            <button onclick="tempEd.splice(${i},1);renderEd()"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
+            ${ex.sets.map((s,si) => `<div class="flex gap-2 mb-2"><input type="number" onchange="tempEd[${i}].sets[${si}].weight=this.value" value="${s.weight}" class="input-gym text-xs" placeholder="KG"><input type="number" onchange="tempEd[${i}].sets[${si}].reps=this.value" value="${s.reps}" class="input-gym text-xs" placeholder="REPS"></div>`).join('')}
+            <button onclick="tempEd[${i}].sets.push({weight:0,reps:0});renderEd()" class="text-[9px] font-black text-zinc-600 uppercase">+ Serie</button></div>
+        `).join('');
+        lucide.createIcons();
+    }
+    function addExEd() { tempEd.push({name:"Nuevo", sets:[{weight:0,reps:0}]}); renderEd(); }
+    function saveRoutine() {
+        const n = document.getElementById('ed-name').value;
+        if(!n) return alert("Pon nombre");
+        routines[n] = {rest: parseInt(document.getElementById('ed-rest').value), exercises: tempEd};
+        localStorage.setItem('gym_v11_final', JSON.stringify(routines));
+        closeEditor(); renderRoutines();
+    }
+    function closeEditor() { document.getElementById('screen-editor').classList.add('hidden'); }
+
+    function startSes(n) {
+        session.data = JSON.parse(JSON.stringify(routines[n]));
+        session.data.exercises.forEach(ex => ex.sets.forEach(s => s.done = false));
+        session.start = Date.now();
+        session.rest = session.data.rest;
+        document.getElementById('ses-title').innerText = n;
+        document.getElementById('screen-session').classList.remove('hidden');
+        session.timer = setInterval(() => {
+            const d = Math.floor((Date.now()-session.start)/1000);
+            document.getElementById('ses-timer').innerText = Math.floor(d/60).toString().padStart(2,'0')+":"+(d%60).toString().padStart(2,'0');
+        }, 1000);
+        renderSes();
+    }
+    function renderSes() {
+        document.getElementById('ses-exercises').innerHTML = session.data.exercises.map((ex,i) => `
+            <div class="glass p-5"><h4 class="font-black text-blue-500 mb-4 italic">${ex.name}</h4><div class="space-y-2">
+            ${ex.sets.map((s,si) => `
+                <div class="flex items-center gap-2 p-1 rounded-xl transition-all ${s.done?'row-done':''}"><span class="w-4 text-[10px] text-zinc-600 font-bold">${si+1}</span>
+                <input type="number" onchange="session.data.exercises[${i}].sets[${si}].weight=this.value" value="${s.weight}" class="input-gym" placeholder="KG">
+                <input type="number" onchange="session.data.exercises[${i}].sets[${si}].reps=this.value" value="${s.reps}" class="input-gym" placeholder="REPS">
+                <button onclick="tglSet(${i},${si})" class="w-12 h-12 rounded-xl flex items-center justify-center ${s.done?'bg-green-500 text-black':'bg-zinc-800 text-zinc-600'}"><i data-lucide="check"></i></button></div>
+            `).join('')}</div></div>
+        `).join('');
+        lucide.createIcons();
+    }
+    function tglSet(i,si) {
+        const s = session.data.exercises[i].sets[si];
+        s.done = !s.done; if(s.done) startRest(); renderSes();
+    }
+    function startRest() {
+        stopRest(); let t = session.rest;
+        document.getElementById('rest-overlay').classList.remove('hidden');
+        document.getElementById('rest-clock').innerText = "0"+Math.floor(t/60)+":"+(t%60).toString().padStart(2,'0');
+        restInt = setInterval(() => {
+            t--; document.getElementById('rest-clock').innerText = "0"+Math.floor(t/60)+":"+(t%60).toString().padStart(2,'0');
+            if(t<=0) stopRest();
+        }, 1000);
+    }
+    function stopRest() { clearInterval(restInt); document.getElementById('rest-overlay').classList.add('hidden'); }
+
+    function finishSession() {
+        if(!confirm("¿Finalizar?")) return;
+        clearInterval(session.timer);
+        const date = new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
+        session.data.exercises.forEach(ex => {
+            let m = 0; ex.sets.forEach(s => { if(s.done && s.weight > m) m = s.weight; });
+            if(m>0) { if(!history[ex.name]) history[ex.name] = []; history[ex.name].push({date, weight: m}); }
+        });
+        localStorage.setItem('gym_v11_hist', JSON.stringify(history));
+        routines[document.getElementById('ses-title').innerText].exercises = session.data.exercises.map(ex=>({name:ex.name, sets:ex.sets.map(s=>({weight:s.weight, reps:s.reps}))}));
+        localStorage.setItem('gym_v11_final', JSON.stringify(routines));
+        document.getElementById('screen-session').classList.add('hidden'); nav('main');
+    }
+
+    function renderProgList() {
+        const div = document.getElementById('progress-list');
+        div.innerHTML = Object.keys(history).length ? '' : '<p class="text-center py-20 opacity-30">Sin registros</p>';
+        Object.keys(history).sort().forEach(n => {
+            const h = history[n], last = h[h.length-1].weight;
+            div.innerHTML += `<div onclick="openProg('${n}')" class="glass p-6 flex justify-between items-center"><div><h3 class="font-black italic">${n}</h3><p class="text-[8px] opacity-50 uppercase tracking-widest">Evolución →</p></div><div class="text-right text-2xl font-black text-blue-500">${last}<span class="text-[10px] text-zinc-600 ml-1">KG</span></div></div>`;
+        });
+    }
+    function openProg(n) {
+        const logs = history[n]; document.getElementById('modal-name').innerText = n;
+        document.getElementById('prog-modal').classList.remove('hidden');
+        const max = Math.max(...logs.map(l=>l.weight));
+        document.getElementById('chart').innerHTML = logs.slice(-7).map(l=>`<div class="bar" data-v="${l.weight}" style="height:${(l.weight/max)*100}%"></div>`).join('');
+        document.getElementById('modal-logs').innerHTML = logs.slice().reverse().map(l=>`<div class="glass p-4 flex justify-between items-center opacity-60 text-xs"><span class="font-bold">${l.date}</span><span class="font-black text-sm">${l.weight} KG</span></div>`).join('');
+        lucide.createIcons();
+    }
+    function closeProg() { document.getElementById('prog-modal').classList.add('hidden'); }
+
+    window.onload = () => { renderRoutines(); lucide.createIcons(); }
+</script>
+</body>
+</html>

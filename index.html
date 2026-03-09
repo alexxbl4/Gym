@@ -3,187 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Gym Elite</title>
+    <title>Gym Pro Elite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
-        
-        :root {
-            --bg: #000000;
-            --card: #121214;
-            --accent: #3b82f6;
-        }
-
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: var(--bg); 
-            color: white;
-            overscroll-behavior: none; /* Evita el rebote de página web */
-        }
-
-        .safe-area-top { padding-top: env(safe-area-inset-top); }
-        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
-
-        .app-card {
-            background: var(--card);
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.2s ease;
-        }
-
-        .app-card:active { transform: scale(0.97); opacity: 0.8; }
-
-        .day-tab {
-            -webkit-tap-highlight-color: transparent;
-            flex: 0 0 auto;
-        }
-
-        .active-day {
-            background: var(--accent);
-            color: white;
-            box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.5);
-        }
-
-        .check-done {
-            background: #10b981 !important;
-            border-color: #10b981 !important;
-        }
-
-        .strikethrough {
-            text-decoration: line-through;
-            opacity: 0.4;
-        }
-
-        /* Ocultar scrollbar */
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #000; color: white; -webkit-tap-highlight-color: transparent; }
+        .glass { background: #121214; border: 1px solid rgba(255,255,255,0.05); }
+        .active-session { border: 2px solid #3b82f6 !important; box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .badge-last { background: rgba(255,255,255,0.05); color: #94a3b8; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
-<body class="safe-area-top pb-32">
+<body class="pb-40">
 
-    <header class="px-6 py-8 flex justify-between items-end">
-        <div>
-            <h1 class="text-4xl font-black tracking-tighter">GYM<span class="text-blue-500">PRO</span></h1>
-            <p id="date-label" class="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1"></p>
-        </div>
-        <button onclick="resetDay()" class="p-3 bg-zinc-900 rounded-2xl active:bg-zinc-800">
-            <i data-lucide="refresh-cw" class="w-5 h-5 text-slate-400"></i>
-        </button>
-    </header>
+    <div id="home-screen" class="p-6">
+        <header class="py-8">
+            <h1 class="text-4xl font-black">ENTRENAR</h1>
+            <p class="text-slate-500 font-bold mt-1 uppercase text-xs tracking-widest">Elige una rutina fija</p>
+        </header>
 
-    <div class="px-6 mb-8 overflow-x-auto flex gap-3 no-scrollbar" id="day-bar">
-        </div>
-
-    <main id="main-list" class="px-6 space-y-4">
-        </main>
-
-    <button onclick="openModal()" class="fixed bottom-28 right-6 w-16 h-16 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform z-50">
-        <i data-lucide="plus" class="text-white w-8 h-8"></i>
-    </button>
-
-    <nav class="fixed bottom-0 left-0 right-0 h-24 bg-zinc-950/80 backdrop-blur-xl border-t border-white/5 px-10 flex justify-between items-start pt-4 safe-area-bottom">
-        <div class="flex flex-col items-center gap-1 text-blue-500">
-            <i data-lucide="dumbbell"></i>
-            <span class="text-[10px] font-bold">Rutina</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 text-zinc-600">
-            <i data-lucide="trophy"></i>
-            <span class="text-[10px] font-bold">Récords</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 text-zinc-600">
-            <i data-lucide="settings"></i>
-            <span class="text-[10px] font-bold">Ajustes</span>
-        </div>
-    </nav>
-
-    <div id="modal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-[60] flex items-end">
-        <div class="w-full bg-zinc-900 rounded-t-[40px] p-8 pb-12 animate-in slide-in-from-bottom duration-300">
-            <div class="w-12 h-1 bg-zinc-700 rounded-full mx-auto mb-8"></div>
-            <h2 class="text-2xl font-extrabold mb-6">Añadir Ejercicio</h2>
-            <div class="space-y-4">
-                <input type="text" id="ex-name" placeholder="Nombre (ej. Press Militar)" class="w-full h-16 bg-zinc-800 rounded-2xl px-6 text-lg font-bold focus:ring-2 ring-blue-500 outline-none">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="number" id="ex-weight" placeholder="Peso kg" class="h-16 bg-zinc-800 rounded-2xl px-6 text-lg font-bold outline-none">
-                    <input type="number" id="ex-reps" placeholder="Reps" class="h-16 bg-zinc-800 rounded-2xl px-6 text-lg font-bold outline-none">
-                </div>
-                <button onclick="addExercise()" class="w-full h-16 bg-blue-600 rounded-2xl font-black text-lg mt-4">AÑADIR A LA LISTA</button>
-                <button onclick="closeModal()" class="w-full text-zinc-500 font-bold py-2">Cancelar</button>
+        <div id="routine-list" class="space-y-4">
             </div>
+
+        <button onclick="addNewRoutine()" class="w-full mt-6 py-4 border-2 border-dashed border-zinc-800 rounded-3xl text-zinc-500 font-bold flex items-center justify-center gap-2">
+            <i data-lucide="plus-circle"></i> Nueva Rutina Fija
+        </button>
+
+        <div class="mt-12">
+            <h2 class="text-xl font-bold mb-4">Historial Reciente</h2>
+            <div id="history-list" class="space-y-3">
+                </div>
         </div>
     </div>
 
+    <div id="session-screen" class="hidden fixed inset-0 bg-black z-50 overflow-y-auto pb-32">
+        <header class="p-6 bg-zinc-950 border-b border-white/5 sticky top-0 z-10">
+            <div class="flex justify-between items-center mb-2">
+                <h2 id="active-routine-name" class="text-2xl font-black text-blue-500">Rutina</h2>
+                <button onclick="finishSession()" class="bg-green-600 px-6 py-2 rounded-xl font-bold text-sm">FINALIZAR</button>
+            </div>
+            <div class="flex items-center gap-2 text-slate-400 font-mono text-xl">
+                <i data-lucide="timer" class="w-5 h-5"></i>
+                <span id="session-timer">00:00:00</span>
+            </div>
+        </header>
+
+        <main id="active-exercises" class="p-6 space-y-6">
+            </main>
+        
+        <div class="px-6">
+            <button onclick="addExerciseToActive()" class="w-full py-4 bg-zinc-900 rounded-2xl font-bold text-slate-400">
+                + Añadir ejercicio extra
+            </button>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 h-24 bg-black/80 backdrop-blur-xl border-t border-white/5 flex justify-around items-center px-8">
+        <div class="flex flex-col items-center text-blue-500"><i data-lucide="play"></i><span class="text-[10px] font-bold">Entreno</span></div>
+        <div class="flex flex-col items-center text-zinc-600"><i data-lucide="bar-chart-2"></i><span class="text-[10px] font-bold">Progreso</span></div>
+        <div class="flex flex-col items-center text-zinc-600"><i data-lucide="user"></i><span class="text-[10px] font-bold">Perfil</span></div>
+    </nav>
+
     <script>
-        const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-        let currentDay = 'Lunes';
-        let data = JSON.parse(localStorage.getItem('gym_pro_mobile')) || {};
-        days.forEach(d => { if(!data[d]) data[d] = []; });
+        // --- BASE DE DATOS LOCAL ---
+        let routines = JSON.parse(localStorage.getItem('hevy_routines')) || {
+            "Empuje (Pecho/Tríceps)": [{name: "Press Banca", weight: 60, reps: 10}, {name: "Aperturas", weight: 12, reps: 12}],
+            "Tracción (Espalda/Bíceps)": [{name: "Dominadas", weight: 0, reps: 8}, {name: "Remo", weight: 40, reps: 10}]
+        };
+        let history = JSON.parse(localStorage.getItem('hevy_history')) || [];
+        let sessionData = { start: null, timer: null, exercises: [] };
 
         function init() {
-            const bar = document.getElementById('day-bar');
-            bar.innerHTML = days.map(d => `
-                <button onclick="setDay('${d}')" id="btn-${d}" class="day-tab px-6 py-3 rounded-2xl bg-zinc-900 text-zinc-500 font-extrabold transition-all text-sm">
-                    ${d.substring(0,3)}
-                </button>
-            `).join('');
-            
-            document.getElementById('date-label').innerText = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-            setDay(currentDay);
-        }
-
-        function setDay(day) {
-            currentDay = day;
-            document.querySelectorAll('.day-tab').forEach(b => b.classList.remove('active-day'));
-            document.getElementById(`btn-${day}`).classList.add('active-day');
-            render();
-        }
-
-        function render() {
-            const container = document.getElementById('main-list');
-            container.innerHTML = data[currentDay].length ? '' : `<p class="text-center text-zinc-600 py-20 font-bold italic">No hay ejercicios para hoy</p>`;
-            
-            data[currentDay].forEach((ex, i) => {
-                container.innerHTML += `
-                    <div class="app-card p-5 flex justify-between items-center ${ex.done ? 'opacity-40' : ''}">
-                        <div class="flex items-center gap-4 flex-1" onclick="toggle(${i})">
-                            <div class="w-14 h-14 rounded-2xl border-2 border-zinc-800 flex items-center justify-center font-black text-xl transition-all ${ex.done ? 'check-done border-transparent text-black' : 'text-blue-500'}">
-                                ${ex.done ? '✓' : ex.weight}
-                            </div>
-                            <div>
-                                <h3 class="font-extrabold text-lg ${ex.done ? 'strikethrough' : ''}">${ex.name}</h3>
-                                <p class="text-zinc-500 text-sm font-bold">${ex.reps} repeticiones</p>
-                            </div>
-                        </div>
-                        <button onclick="remove(${i})" class="ml-4 text-zinc-800"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                    </div>
-                `;
-            });
+            renderRoutines();
+            renderHistory();
             lucide.createIcons();
         }
 
-        function addExercise() {
-            const n = document.getElementById('ex-name').value;
-            const w = document.getElementById('ex-weight').value || 0;
-            const r = document.getElementById('ex-reps').value || 0;
-            if(!n) return;
-            data[currentDay].push({name: n, weight: w, reps: r, done: false});
-            save();
-            closeModal();
-            document.getElementById('ex-name').value = '';
+        function renderRoutines() {
+            const list = document.getElementById('routine-list');
+            list.innerHTML = Object.keys(routines).map(name => `
+                <div class="glass p-6 rounded-[2.5rem] flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xl font-extrabold">${name}</h3>
+                        <p class="text-slate-500 text-xs mt-1 font-bold italic">${routines[name].length} ejercicios</p>
+                    </div>
+                    <button onclick="startSession('${name}')" class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="play-circle" class="text-white"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
         }
 
-        function toggle(i) { data[currentDay][i].done = !data[currentDay][i].done; save(); }
-        function remove(i) { if(confirm('¿Borrar?')) { data[currentDay].splice(i, 1); save(); } }
-        function resetDay() { data[currentDay].forEach(e => e.done = false); save(); }
-        
-        function save() { 
-            localStorage.setItem('gym_pro_mobile', JSON.stringify(data)); 
-            render(); 
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = history.slice(-3).reverse().map(entry => `
+                <div class="bg-zinc-900/50 p-4 rounded-2xl flex justify-between items-center border border-white/5">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500">${entry.date}</p>
+                        <p class="font-bold">${entry.name}</p>
+                    </div>
+                    <p class="text-blue-500 font-mono text-xs font-bold">${entry.duration}</p>
+                </div>
+            `).join('');
         }
 
-        function openModal() { document.getElementById('modal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        // --- LÓGICA DE SESIÓN ---
+        function startSession(name) {
+            sessionData.start = Date.now();
+            sessionData.exercises = JSON.parse(JSON.stringify(routines[name])); // Copia profunda
+            document.getElementById('active-routine-name').innerText = name;
+            document.getElementById('session-screen').classList.remove('hidden');
+            
+            // Iniciar Timer
+            sessionData.timer = setInterval(updateTimer, 1000);
+            renderActiveExercises();
+        }
+
+        function updateTimer() {
+            const diff = Date.now() - sessionData.start;
+            const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+            const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+            const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+            document.getElementById('session-timer').innerText = `${h}:${m}:${s}`;
+        }
+
+        function renderActiveExercises() {
+            const container = document.getElementById('active-exercises');
+            container.innerHTML = sessionData.exercises.map((ex, i) => `
+                <div class="glass p-5 rounded-3xl space-y-4">
+                    <div class="flex justify-between">
+                        <h4 class="font-black text-lg text-white">${ex.name}</h4>
+                        <span class="badge-last italic text-blue-400">Anterior: ${ex.weight}kg x ${ex.reps}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-black/40 rounded-2xl p-3 border border-zinc-800">
+                            <label class="text-[9px] text-zinc-500 font-black uppercase">Peso kg</label>
+                            <input type="number" onchange="updateEx(${i}, 'weight', this.value)" placeholder="${ex.weight}" class="w-full bg-transparent font-bold text-xl outline-none">
+                        </div>
+                        <div class="bg-black/40 rounded-2xl p-3 border border-zinc-800">
+                            <label class="text-[9px] text-zinc-500 font-black uppercase">Repeticiones</label>
+                            <input type="number" onchange="updateEx(${i}, 'reps', this.value)" placeholder="${ex.reps}" class="w-full bg-transparent font-bold text-xl outline-none">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateEx(index, field, value) {
+            sessionData.exercises[index][field] = parseFloat(value);
+        }
+
+        function finishSession() {
+            clearInterval(sessionData.timer);
+            const name = document.getElementById('active-routine-name').innerText;
+            const duration = document.getElementById('session-timer').innerText;
+            const date = new Date().toLocaleDateString('es-ES', {day: 'numeric', month: 'short'});
+
+            // 1. Guardar en Historial
+            history.push({ name, duration, date, exercises: sessionData.exercises });
+            localStorage.setItem('hevy_history', JSON.stringify(history));
+
+            // 2. Actualizar Rutina Fija (Progresión)
+            routines[name] = JSON.parse(JSON.stringify(sessionData.exercises));
+            localStorage.setItem('hevy_routines', JSON.stringify(routines));
+
+            // 3. Reset UI
+            document.getElementById('session-screen').classList.add('hidden');
+            init();
+            alert("¡Sesión Guardada! Los pesos se han actualizado para la próxima vez.");
+        }
+
+        function addNewRoutine() {
+            const name = prompt("Nombre de la rutina:");
+            if(name) {
+                routines[name] = [];
+                renderRoutines();
+            }
+        }
+
+        function addExerciseToActive() {
+            const name = prompt("Nombre del nuevo ejercicio:");
+            if(name) {
+                sessionData.exercises.push({name, weight: 0, reps: 0});
+                renderActiveExercises();
+            }
+        }
 
         init();
     </script>

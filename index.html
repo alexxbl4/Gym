@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MoonPro V17.1</title>
+    <title>MoonPro V17.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -15,11 +15,49 @@
         .row-done { background: rgba(16, 185, 129, 0.15) !important; border-color: #10b981 !important; }
         .hidden { display: none !important; }
         .tab-active { color: #3b82f6 !important; }
-        .label-col { font-size: 8px; font-weight: 800; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
-        .ghost-val { font-size: 9px; font-weight: 700; color: #3b82f6; opacity: 0.6; margin-top: 2px; }
+        .label-col { font-size: 8px; font-weight: 800; color: #444; text-transform: uppercase; }
+        
+        /* Animación para modales */
+        .modal-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body class="pb-32">
+
+    <div id="modal-confirm" class="hidden fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+        <div class="glass p-8 w-full max-w-xs text-center modal-in">
+            <div class="w-16 h-16 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="help-circle" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-xl font-black uppercase mb-2">¿Terminar?</h3>
+            <p class="text-zinc-500 text-xs font-bold mb-6 uppercase">Se guardarán tus records y el tiempo total.</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirm()" class="flex-1 py-4 text-xs font-black uppercase text-zinc-500">No</button>
+                <button onclick="processFinish()" class="flex-1 py-4 bg-blue-600 rounded-2xl text-xs font-black uppercase">Sí, Fin</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-summary" class="hidden fixed inset-0 z-[150] bg-black overflow-y-auto p-6 flex flex-col items-center justify-center">
+        <div class="w-full max-w-sm text-center">
+            <div class="mb-8">
+                <i data-lucide="trophy" class="w-16 h-16 text-amber-500 mx-auto mb-4"></i>
+                <h1 class="text-4xl font-black italic uppercase tracking-tighter">¡BRUTAL!</h1>
+                <p class="text-blue-500 font-black uppercase text-xs tracking-widest mt-2">Sesión Completada</p>
+            </div>
+            <div class="glass p-8 w-full mb-8">
+                <div class="mb-6">
+                    <p class="text-[10px] text-zinc-500 font-black uppercase">Tiempo Total</p>
+                    <p id="sum-time" class="text-3xl font-black">00:00</p>
+                </div>
+                <div class="text-left border-t border-zinc-800 pt-6">
+                    <p class="text-[10px] text-zinc-500 font-black uppercase mb-4">Ejercicios Hechos:</p>
+                    <ul id="sum-ex-list" class="space-y-2 text-sm font-bold uppercase italic text-zinc-300"></ul>
+                </div>
+            </div>
+            <button onclick="nav('main')" class="w-full bg-zinc-100 text-black py-5 rounded-[2rem] font-black uppercase text-xs tracking-widest">Volver al Inicio</button>
+        </div>
+    </div>
 
     <div id="rest-overlay" class="hidden fixed top-0 left-0 right-0 z-[100] bg-blue-600 p-6 flex justify-between items-center shadow-2xl">
         <div class="text-left"><p class="text-[10px] font-black uppercase opacity-70">Descanso</p><p id="rest-clock" class="text-3xl font-black">01:30</p></div>
@@ -56,7 +94,7 @@
     <div id="screen-session" class="hidden fixed inset-0 bg-black z-[60] overflow-y-auto pb-40">
         <header class="p-6 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-10 border-b border-zinc-900 flex justify-between items-center">
             <div><h2 id="ses-title" class="text-xl font-black italic uppercase">Entreno</h2><p id="ses-timer" class="text-blue-500 font-mono text-xs font-bold mt-0.5">00:00</p></div>
-            <button onclick="finishSession()" class="bg-green-600 px-6 py-3 rounded-2xl font-black text-[10px] uppercase">Finalizar</button>
+            <button onclick="openConfirm()" class="bg-green-600 px-6 py-3 rounded-2xl font-black text-[10px] uppercase">Finalizar</button>
         </header>
         <main id="ses-exercises" class="p-4"></main>
     </div>
@@ -67,12 +105,6 @@
         <div class="glass p-5 mb-8 flex justify-between items-center"><span class="text-xs font-bold uppercase text-zinc-500">Descanso (seg)</span><input type="number" id="ed-rest" value="90" class="w-20 bg-transparent text-right font-black text-blue-500 outline-none text-2xl"></div>
         <div id="ed-exercises"></div>
         <button onclick="addExEd()" class="w-full mt-8 py-5 bg-zinc-900 rounded-2xl font-black text-xs text-zinc-400 uppercase">+ Añadir Ejercicio</button>
-    </div>
-
-    <div id="prog-modal" class="hidden fixed inset-0 bg-black z-[110] p-6 overflow-y-auto">
-        <div class="flex justify-between mb-8 items-center"><h2 id="modal-name" class="text-2xl font-black text-blue-500 italic uppercase"></h2><button onclick="closeProg()"><i data-lucide="x"></i></button></div>
-        <div class="glass p-6 mb-6"><div id="chart" class="flex items-end justify-between h-40 gap-1 border-b border-zinc-800"></div></div>
-        <div id="modal-logs" class="space-y-2"></div>
     </div>
 
     <nav class="fixed bottom-0 left-0 right-0 h-24 bg-zinc-950/90 backdrop-blur-md border-t border-zinc-900 flex justify-around items-center px-4 z-40">
@@ -95,34 +127,75 @@
     }
 
     function nav(s) {
-        document.querySelectorAll('body > div').forEach(d => { if(!d.id.includes('overlay') && !d.id.includes('modal')) d.classList.add('hidden'); });
+        document.querySelectorAll('body > div').forEach(d => { if(!d.id.includes('overlay') && !d.id.includes('modal') && !d.id.includes('screen-summary')) d.classList.add('hidden'); });
         document.getElementById('screen-'+s).classList.remove('hidden');
+        if(s === 'main') document.getElementById('screen-summary').classList.add('hidden');
         document.querySelectorAll('nav button').forEach(b => b.classList.add('text-zinc-600'));
-        document.getElementById('btn-'+(s==='progress'?'sett':s.substring(0,4))).classList.add('tab-active');
+        const btn = document.getElementById('btn-'+(s==='progress'?'sett':s.substring(0,4)));
+        if(btn) btn.classList.add('tab-active');
         if(s==='main') renderRoutines(); 
         if(s==='history') renderHistory();
         if(s==='progress') renderProgList();
         lucide.createIcons();
     }
 
+    // --- LÓGICA DE FINALIZACIÓN ---
+    function openConfirm() { 
+        document.getElementById('modal-confirm').classList.remove('hidden'); 
+        lucide.createIcons();
+    }
+    function closeConfirm() { document.getElementById('modal-confirm').classList.add('hidden'); }
+
+    function processFinish() {
+        closeConfirm();
+        clearInterval(session.timer);
+        const duration = document.getElementById('ses-timer').innerText;
+        const routineName = document.getElementById('ses-title').innerText;
+        const date = new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
+        
+        const completed = session.data.exercises.map(ex => ({ 
+            name: ex.name, 
+            setsDone: ex.sets.filter(s => s.done).length 
+        })).filter(ex => ex.setsDone > 0);
+        
+        sessionLogs.unshift({ name: routineName, date, duration, exercises: completed });
+
+        session.data.exercises.forEach(ex => {
+            let maxW = 0; 
+            ex.sets.forEach(s => { if(s.done && parseFloat(s.weight) > maxW) maxW = parseFloat(s.weight); });
+            if(maxW > 0) {
+                if(!historyRecords[ex.name]) historyRecords[ex.name] = [];
+                historyRecords[ex.name].push({date, weight: maxW});
+            }
+        });
+
+        routines[routineName].exercises = session.data.exercises.map(ex => ({
+            name: ex.name, sets: ex.sets.map(s => ({ weight: s.weight, reps: s.reps }))
+        }));
+
+        saveAll();
+
+        // Mostrar Resumen
+        document.getElementById('sum-time').innerText = duration;
+        document.getElementById('sum-ex-list').innerHTML = completed.map(e => `<li><i data-lucide="check" class="w-3 h-3 inline mr-2 text-green-500"></i>${e.name}</li>`).join('');
+        document.getElementById('screen-session').classList.add('hidden');
+        document.getElementById('screen-summary').classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    // --- RESTO DE FUNCIONES ---
     function renderRoutines() {
         const div = document.getElementById('routine-list');
         div.innerHTML = Object.keys(routines).map(n => `
             <div class="glass p-6">
                 <div class="flex justify-between mb-6">
                     <div><h3 class="text-xl font-black italic tracking-tighter uppercase">${n}</h3><p class="text-[9px] text-zinc-600 font-black mt-1 uppercase">${routines[n].exercises.length} Ejercicios</p></div>
-                    <div class="flex gap-2">
-                        <button onclick="deleteRoutine('${n}')" class="text-red-900/50 p-2"><i data-lucide="trash-2"></i></button>
-                        <button onclick="openEditor('${n}')" class="text-zinc-800 p-2"><i data-lucide="edit-3"></i></button>
-                    </div>
+                    <div class="flex gap-2"><button onclick="deleteRoutine('${n}')" class="text-red-900/50 p-2"><i data-lucide="trash-2"></i></button><button onclick="openEditor('${n}')" class="text-zinc-800 p-2"><i data-lucide="edit-3"></i></button></div>
                 </div>
                 <button onclick="startSes('${n}')" class="w-full bg-blue-600 py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Entrenar</button>
-            </div>
-        `).join('');
+            </div>`).join('');
         lucide.createIcons();
     }
-
-    function deleteRoutine(n) { if(confirm(`¿Eliminar ${n}?`)) { delete routines[n]; saveAll(); renderRoutines(); } }
 
     function renderSes() {
         const cont = document.getElementById('ses-exercises');
@@ -134,44 +207,11 @@
                 ${ex.sets.map((s,si) => `
                     <div class="flex items-center gap-2 p-1 rounded-xl transition-all ${s.done?'row-done':''}">
                         <span class="w-6 text-[10px] text-zinc-700 font-extrabold text-center">${si+1}</span>
-                        <div class="flex-1"><input type="number" step="any" oninput="session.data.exercises[${i}].sets[${si}].weight=this.value" value="${s.weight}" class="input-gym" placeholder="0"><div class="ghost-val text-center">Ant: ${s.weight || '-'}</div></div>
-                        <div class="flex-1"><input type="number" step="any" oninput="session.data.exercises[${i}].sets[${si}].reps=this.value" value="${s.reps}" class="input-gym" placeholder="0"><div class="ghost-val text-center">Ant: ${s.reps || '-'}</div></div>
+                        <div class="flex-1"><input type="number" step="any" oninput="session.data.exercises[${i}].sets[${si}].weight=this.value" value="${s.weight}" class="input-gym"><div class="ghost-val text-center">Ant: ${s.weight || '-'}</div></div>
+                        <div class="flex-1"><input type="number" step="any" oninput="session.data.exercises[${i}].sets[${si}].reps=this.value" value="${s.reps}" class="input-gym"><div class="ghost-val text-center">Ant: ${s.reps || '-'}</div></div>
                         <button onclick="tglSet(${i},${si})" class="w-12 h-12 rounded-xl flex items-center justify-center ${s.done?'bg-green-500 text-black':'bg-zinc-800 text-zinc-600'}"><i data-lucide="check" class="w-5 h-5"></i></button>
-                    </div>
-                `).join('')}
+                    </div>`).join('')}
                 </div>
-            </div>`).join('');
-        lucide.createIcons();
-    }
-
-    function tglSet(i,si) {
-        const s = session.data.exercises[i].sets[si];
-        s.done = !s.done; 
-        if(s.done) startRest(); 
-        renderSes();
-    }
-
-    function renderEd() {
-        document.getElementById('ed-exercises').innerHTML = tempEd.map((ex,i) => `
-            <div class="glass p-5">
-                <div class="flex justify-between mb-4 items-center">
-                    <input oninput="tempEd[${i}].name=this.value" value="${ex.name}" class="bg-transparent font-black text-blue-500 outline-none uppercase text-xs w-2/3">
-                    <button onclick="tempEd.splice(${i},1);renderEd()" class="text-zinc-800"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                </div>
-                <div class="flex gap-2 mb-1 px-1">
-                    <span class="w-6 label-col text-center">Set</span>
-                    <span class="flex-1 label-col text-center">KG / KM</span>
-                    <span class="flex-1 label-col text-center">REPS / MIN</span>
-                    <span class="w-8"></span>
-                </div>
-                <div class="space-y-2">
-                ${ex.sets.map((s,si) => `<div class="flex gap-2 items-center"><span class="w-6 text-[10px] font-bold text-zinc-800 text-center">${si+1}</span>
-                    <input type="number" step="any" oninput="tempEd[${i}].sets[${si}].weight=this.value" value="${s.weight}" class="input-gym text-xs" placeholder="0">
-                    <input type="number" step="any" oninput="tempEd[${i}].sets[${si}].reps=this.value" value="${s.reps}" class="input-gym text-xs" placeholder="0">
-                    <button onclick="tempEd[${i}].sets.splice(${si},1);renderEd()" class="w-8 text-zinc-800 p-1 flex justify-center"><i data-lucide="minus" class="w-4 h-4"></i></button></div>
-                `).join('')}
-                </div>
-                <button onclick="tempEd[${i}].sets.push({weight:0,reps:0});renderEd()" class="text-[9px] font-black text-zinc-700 uppercase mt-4">+ Serie</button>
             </div>`).join('');
         lucide.createIcons();
     }
@@ -190,32 +230,11 @@
         renderSes();
     }
 
-    function finishSession() {
-        if(!confirm("¿Finalizar?")) return;
-        clearInterval(session.timer);
-        const duration = document.getElementById('ses-timer').innerText;
-        const routineName = document.getElementById('ses-title').innerText;
-        const date = new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
-        const completed = session.data.exercises.map(ex => ({ name: ex.name, setsDone: ex.sets.filter(s => s.done).length })).filter(ex => ex.setsDone > 0);
-        sessionLogs.unshift({ name: routineName, date, duration, exercises: completed });
-        session.data.exercises.forEach(ex => {
-            let maxW = 0; 
-            ex.sets.forEach(s => { if(s.done && parseFloat(s.weight) > maxW) maxW = parseFloat(s.weight); });
-            if(maxW > 0) {
-                if(!historyRecords[ex.name]) historyRecords[ex.name] = [];
-                historyRecords[ex.name].push({date, weight: maxW});
-            }
-        });
-        routines[routineName].exercises = session.data.exercises.map(ex => ({
-            name: ex.name,
-            sets: ex.sets.map(s => ({ weight: s.weight, reps: s.reps }))
-        }));
-        saveAll();
-        document.getElementById('screen-session').classList.add('hidden'); 
-        nav('history');
+    function tglSet(i,si) {
+        const s = session.data.exercises[i].sets[si];
+        s.done = !s.done; if(s.done) startRest(); renderSes();
     }
 
-    function stopRest() { clearInterval(restInt); document.getElementById('rest-overlay').classList.add('hidden'); }
     function startRest() {
         stopRest(); let t = session.rest;
         document.getElementById('rest-overlay').classList.remove('hidden');
@@ -224,16 +243,48 @@
             if(t<=0) stopRest();
         }, 1000);
     }
+    function stopRest() { clearInterval(restInt); document.getElementById('rest-overlay').classList.add('hidden'); }
+
+    function renderEd() {
+        document.getElementById('ed-exercises').innerHTML = tempEd.map((ex,i) => `
+            <div class="glass p-5">
+                <div class="flex justify-between mb-4 items-center">
+                    <input oninput="tempEd[${i}].name=this.value" value="${ex.name}" class="bg-transparent font-black text-blue-500 outline-none uppercase text-xs w-2/3">
+                    <button onclick="tempEd.splice(${i},1);renderEd()" class="text-zinc-800"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+                <div class="flex gap-2 mb-1 px-1"><span class="w-6 label-col text-center">Set</span><span class="flex-1 label-col text-center">KG / KM</span><span class="flex-1 label-col text-center">REPS / MIN</span><span class="w-8"></span></div>
+                <div class="space-y-2">
+                ${ex.sets.map((s,si) => `<div class="flex gap-2 items-center"><span class="w-6 text-[10px] font-bold text-zinc-800 text-center">${si+1}</span>
+                    <input type="number" step="any" oninput="tempEd[${i}].sets[${si}].weight=this.value" value="${s.weight}" class="input-gym text-xs"><input type="number" step="any" oninput="tempEd[${i}].sets[${si}].reps=this.value" value="${s.reps}" class="input-gym text-xs"><button onclick="tempEd[${i}].sets.splice(${si},1);renderEd()" class="w-8 text-zinc-800 p-1 flex justify-center"><i data-lucide="minus" class="w-4 h-4"></i></button></div>`).join('')}
+                </div>
+                <button onclick="tempEd[${i}].sets.push({weight:0,reps:0});renderEd()" class="text-[9px] font-black text-zinc-700 uppercase mt-4">+ Serie</button>
+            </div>`).join('');
+        lucide.createIcons();
+    }
+
+    function openEditor(n=null) {
+        document.getElementById('screen-editor').classList.remove('hidden');
+        document.getElementById('ed-name').value = n || "";
+        const r = routines[n] || {rest:90, exercises:[]};
+        document.getElementById('ed-rest').value = r.rest;
+        tempEd = JSON.parse(JSON.stringify(r.exercises));
+        renderEd();
+    }
+    function saveRoutine() {
+        const n = document.getElementById('ed-name').value; if(!n) return;
+        routines[n] = {rest: parseInt(document.getElementById('ed-rest').value), exercises: tempEd};
+        saveAll(); document.getElementById('screen-editor').classList.add('hidden'); renderRoutines();
+    }
+    function addExEd() { tempEd.push({name:"Nuevo Ejercicio", sets:[{weight:0,reps:0}]}); renderEd(); }
+    function closeEditor() { document.getElementById('screen-editor').classList.add('hidden'); }
+    function deleteRoutine(n) { if(confirm(`¿Eliminar ${n}?`)) { delete routines[n]; saveAll(); renderRoutines(); } }
     function renderHistory() {
         const div = document.getElementById('history-sessions-list');
         div.innerHTML = sessionLogs.map(log => `<div class="glass p-5 border-l-2 border-blue-600 mb-4"><h3 class="font-black italic uppercase text-[11px]">${log.name}</h3><p class="text-[9px] text-zinc-600 font-black uppercase mt-1">${log.date} • <span class="text-blue-500">${log.duration}</span></p></div>`).join('');
     }
     function renderProgList() {
         const div = document.getElementById('progress-list');
-        div.innerHTML = Object.keys(historyRecords).sort().map(n => {
-            const last = historyRecords[n][historyRecords[n].length-1];
-            return `<div onclick="openProg('${n}')" class="glass p-6 flex justify-between items-center"><div><h3 class="font-black italic uppercase text-xs">${n}</h3></div><div class="text-right text-xl font-black text-blue-500">${last.weight}<span class="text-[9px] ml-1">KG</span></div></div>`
-        }).join('');
+        div.innerHTML = Object.keys(historyRecords).sort().map(n => `<div onclick="openProg('${n}')" class="glass p-6 flex justify-between items-center"><div><h3 class="font-black italic uppercase text-xs">${n}</h3></div><div class="text-right text-xl font-black text-blue-500">${historyRecords[n][historyRecords[n].length-1].weight}<span class="text-[9px] ml-1">KG</span></div></div>`).join('');
     }
     function openProg(n) {
         const logs = historyRecords[n]; document.getElementById('modal-name').innerText = n;
@@ -243,28 +294,8 @@
         document.getElementById('modal-logs').innerHTML = logs.slice().reverse().map(l=>`<div class="glass p-4 flex justify-between items-center opacity-60 text-[10px] font-bold"><span>${l.date}</span><span>${l.weight} KG</span></div>`).join('');
         lucide.createIcons();
     }
-    function closeProg() { document.getElementById('prog-modal').classList.add('hidden'); }
-    function openEditor(n=null) {
-        document.getElementById('screen-editor').classList.remove('hidden');
-        document.getElementById('ed-name').value = n || "";
-        const r = routines[n] || {rest:90, exercises:[]};
-        document.getElementById('ed-rest').value = r.rest;
-        tempEd = JSON.parse(JSON.stringify(r.exercises));
-        renderEd();
-    }
-    function addExEd() { tempEd.push({name:"Nuevo Ejercicio", sets:[{weight:0,reps:0}]}); renderEd(); }
-    function saveRoutine() {
-        const n = document.getElementById('ed-name').value;
-        if(!n) return;
-        routines[n] = {rest: parseInt(document.getElementById('ed-rest').value), exercises: tempEd};
-        saveAll(); document.getElementById('screen-editor').classList.add('hidden'); renderRoutines();
-    }
-    function closeEditor() { document.getElementById('screen-editor').classList.add('hidden'); }
     function exportData() { navigator.clipboard.writeText(JSON.stringify({routines, historyRecords, sessionLogs})).then(() => alert("Copiado")); }
-    function importData() { 
-        const d = JSON.parse(prompt("Pega código") || "{}");
-        if(d.routines) { routines=d.routines; historyRecords=d.historyRecords; sessionLogs=d.sessionLogs; saveAll(); location.reload(); }
-    }
+    function importData() { const d = JSON.parse(prompt("Pega código") || "{}"); if(d.routines) { routines=d.routines; historyRecords=d.historyRecords; sessionLogs=d.sessionLogs; saveAll(); location.reload(); } }
     function resetApp() { if(confirm("¿Borrar?")) { localStorage.clear(); location.reload(); } }
     window.onload = () => { renderRoutines(); lucide.createIcons(); }
 </script>

@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MoonPro V16.2</title>
+    <title>MoonPro V16.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
-        .glass { background: #111; border: 1px solid #222; border-radius: 24px; transition: all 0.2s; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; -webkit-tap-highlight-color: transparent; }
+        .glass { background: #111; border: 1px solid #222; border-radius: 24px; transition: all 0.2s; margin-bottom: 1rem; }
         .input-gym { background: #1c1c1e; border-radius: 10px; text-align: center; font-weight: 800; padding: 10px; outline: none; width: 100%; color: white; border: 1px solid transparent; font-size: 14px; }
         .input-gym:focus { border-color: #3b82f6; }
         .row-done { background: rgba(16, 185, 129, 0.15) !important; border-color: #10b981 !important; }
@@ -18,10 +18,28 @@
         .label-col { font-size: 8px; font-weight: 800; color: #444; text-transform: uppercase; }
         .ghost-val { font-size: 9px; font-weight: 700; color: #3b82f6; opacity: 0.6; margin-top: 2px; }
         
-        /* FIX DEFINITIVO SUPERSERIES */
-        .ss-block-start { border-left: 4px solid #f59e0b !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; margin-bottom: 0 !important; border-bottom: 1px dashed #222 !important; }
-        .ss-block-middle { border-left: 4px solid #f59e0b !important; border-radius: 0 !important; margin-bottom: 0 !important; border-top: none !important; border-bottom: 1px dashed #222 !important; }
-        .ss-block-end { border-left: 4px solid #f59e0b !important; border-top-left-radius: 0 !important; border-top-right-radius: 0 !important; border-top: none !important; margin-top: 0 !important; }
+        /* CSS DE SUPERSERIES CORREGIDO */
+        .ss-block-start { 
+            border-left: 4px solid #f59e0b !important; 
+            border-bottom-left-radius: 0 !important; 
+            border-bottom-right-radius: 0 !important; 
+            margin-bottom: 0 !important; 
+            border-bottom: 1px dashed #333 !important;
+        }
+        .ss-block-middle { 
+            border-left: 4px solid #f59e0b !important; 
+            border-radius: 0 !important; 
+            margin-bottom: 0 !important; 
+            border-top: none !important; 
+            border-bottom: 1px dashed #333 !important;
+        }
+        .ss-block-end { 
+            border-left: 4px solid #f59e0b !important; 
+            border-top-left-radius: 0 !important; 
+            border-top-right-radius: 0 !important; 
+            border-top: none !important;
+            margin-bottom: 1rem !important;
+        }
     </style>
 </head>
 <body class="pb-32">
@@ -53,7 +71,7 @@
         </div>
     </div>
 
-    <div id="screen-progress" class="hidden p-6">
+    <div id="screen-progress" class="hidden p-6 pb-32">
         <header class="py-10 flex items-center gap-4"><button onclick="nav('settings')" class="text-zinc-500"><i data-lucide="chevron-left"></i></button><h1 class="text-4xl font-black italic uppercase">Records</h1></header>
         <div id="progress-list" class="space-y-4"></div>
     </div>
@@ -63,14 +81,14 @@
             <div><h2 id="ses-title" class="text-xl font-black italic uppercase">Entreno</h2><p id="ses-timer" class="text-blue-500 font-mono text-xs font-bold mt-0.5">00:00</p></div>
             <button onclick="finishSession()" class="bg-green-600 px-6 py-3 rounded-2xl font-black text-[10px] uppercase">Finalizar</button>
         </header>
-        <main id="ses-exercises" class="p-4 space-y-6"></main>
+        <main id="ses-exercises" class="p-4"></main>
     </div>
 
     <div id="screen-editor" class="hidden fixed inset-0 bg-black z-[70] overflow-y-auto p-6 pb-40">
         <header class="flex justify-between mb-8 items-center"><button onclick="closeEditor()" class="text-zinc-500 font-bold">Atrás</button><button onclick="saveRoutine()" class="bg-blue-500 px-8 py-2.5 rounded-xl font-black text-xs uppercase">Guardar</button></header>
         <input type="text" id="ed-name" placeholder="Nombre Rutina" class="w-full bg-zinc-900 rounded-2xl p-5 font-bold mb-4 outline-none text-lg">
         <div class="glass p-5 mb-8 flex justify-between items-center"><span class="text-xs font-bold uppercase text-zinc-500">Descanso (seg)</span><input type="number" id="ed-rest" value="90" class="w-20 bg-transparent text-right font-black text-blue-500 outline-none text-2xl"></div>
-        <div id="ed-exercises" class="space-y-4"></div>
+        <div id="ed-exercises"></div>
         <button onclick="addExEd()" class="w-full mt-8 py-5 bg-zinc-900 rounded-2xl font-black text-xs text-zinc-400 uppercase">+ Añadir Ejercicio</button>
     </div>
 
@@ -110,15 +128,19 @@
         lucide.createIcons();
     }
 
-    // --- LÓGICA DE CLASES PARA SUPERSERIES ---
+    // --- LÓGICA DE CLASES PARA SUPERSERIES (ESTRICTA) ---
     function getSSClass(exercises, i) {
         const current = exercises[i];
         const prev = exercises[i-1];
         const next = exercises[i+1];
 
-        if (current.isSS && (!prev || !prev.isSS)) return "ss-block-start";
-        if (current.isSS && prev && prev.isSS) return "ss-block-middle";
-        if (!current.isSS && prev && prev.isSS) return "ss-block-end";
+        const joinsAbove = prev && prev.isSS;
+        const joinsBelow = current.isSS;
+
+        if (joinsAbove && joinsBelow) return "ss-block-middle";
+        if (joinsBelow) return "ss-block-start";
+        if (joinsAbove) return "ss-block-end";
+        
         return "mb-4";
     }
 
@@ -149,9 +171,9 @@
             <div class="glass p-5 ${ssClass}">
                 <div class="flex justify-between items-center mb-4">
                     <h4 class="font-black text-blue-500 italic uppercase text-[11px]">${ex.name}</h4>
-                    ${ex.isSS ? '<span class="bg-amber-500 text-black text-[7px] px-2 py-0.5 rounded font-black uppercase">SS Activa</span>' : ''}
+                    ${ex.isSS ? '<span class="bg-amber-500 text-black text-[7px] px-2 py-0.5 rounded font-black uppercase">SS</span>' : ''}
                 </div>
-                <div class="flex gap-2 mb-1 px-1"><span class="w-6 label-col text-center">Set</span><span class="flex-1 label-col text-center">KG / KM</span><span class="flex-1 label-col text-center">REPS / MIN</span><span class="w-12"></span></div>
+                <div class="flex gap-2 mb-1 px-1"><span class="w-6 label-col text-center">Set</span><span class="flex-1 label-col text-center italic">KG</span><span class="flex-1 label-col text-center italic">REPS</span><span class="w-12"></span></div>
                 <div class="space-y-3">
                 ${ex.sets.map((s,si) => `
                     <div class="flex items-center gap-2 p-1 rounded-xl transition-all ${s.done?'row-done':''}">

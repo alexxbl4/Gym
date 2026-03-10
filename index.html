@@ -3,43 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MoonPro V16.3</title>
+    <title>MoonPro V17.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; -webkit-tap-highlight-color: transparent; }
-        .glass { background: #111; border: 1px solid #222; border-radius: 24px; transition: all 0.2s; margin-bottom: 1rem; }
+        .glass { background: #111; border: 1px solid #222; border-radius: 24px; margin-bottom: 1rem; }
         .input-gym { background: #1c1c1e; border-radius: 10px; text-align: center; font-weight: 800; padding: 10px; outline: none; width: 100%; color: white; border: 1px solid transparent; font-size: 14px; }
         .input-gym:focus { border-color: #3b82f6; }
         .row-done { background: rgba(16, 185, 129, 0.15) !important; border-color: #10b981 !important; }
         .hidden { display: none !important; }
         .tab-active { color: #3b82f6 !important; }
-        .label-col { font-size: 8px; font-weight: 800; color: #444; text-transform: uppercase; }
+        .label-col { font-size: 8px; font-weight: 800; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
         .ghost-val { font-size: 9px; font-weight: 700; color: #3b82f6; opacity: 0.6; margin-top: 2px; }
-        
-        /* CSS DE SUPERSERIES CORREGIDO */
-        .ss-block-start { 
-            border-left: 4px solid #f59e0b !important; 
-            border-bottom-left-radius: 0 !important; 
-            border-bottom-right-radius: 0 !important; 
-            margin-bottom: 0 !important; 
-            border-bottom: 1px dashed #333 !important;
-        }
-        .ss-block-middle { 
-            border-left: 4px solid #f59e0b !important; 
-            border-radius: 0 !important; 
-            margin-bottom: 0 !important; 
-            border-top: none !important; 
-            border-bottom: 1px dashed #333 !important;
-        }
-        .ss-block-end { 
-            border-left: 4px solid #f59e0b !important; 
-            border-top-left-radius: 0 !important; 
-            border-top-right-radius: 0 !important; 
-            border-top: none !important;
-            margin-bottom: 1rem !important;
-        }
     </style>
 </head>
 <body class="pb-32">
@@ -105,16 +82,16 @@
     </nav>
 
 <script>
-    let routines = JSON.parse(localStorage.getItem('moonpro_v16_routines')) || {};
-    let historyRecords = JSON.parse(localStorage.getItem('moonpro_v16_records')) || {}; 
-    let sessionLogs = JSON.parse(localStorage.getItem('moonpro_v16_logs')) || []; 
+    let routines = JSON.parse(localStorage.getItem('moonpro_v17_routines')) || {};
+    let historyRecords = JSON.parse(localStorage.getItem('moonpro_v17_records')) || {}; 
+    let sessionLogs = JSON.parse(localStorage.getItem('moonpro_v17_logs')) || []; 
     let session = { start: null, timer: null, data: null, rest: 90 };
     let restInt = null, tempEd = [];
 
     function saveAll() {
-        localStorage.setItem('moonpro_v16_routines', JSON.stringify(routines));
-        localStorage.setItem('moonpro_v16_records', JSON.stringify(historyRecords));
-        localStorage.setItem('moonpro_v16_logs', JSON.stringify(sessionLogs));
+        localStorage.setItem('moonpro_v17_routines', JSON.stringify(routines));
+        localStorage.setItem('moonpro_v17_records', JSON.stringify(historyRecords));
+        localStorage.setItem('moonpro_v17_logs', JSON.stringify(sessionLogs));
     }
 
     function nav(s) {
@@ -126,22 +103,6 @@
         if(s==='history') renderHistory();
         if(s==='progress') renderProgList();
         lucide.createIcons();
-    }
-
-    // --- LÓGICA DE CLASES PARA SUPERSERIES (ESTRICTA) ---
-    function getSSClass(exercises, i) {
-        const current = exercises[i];
-        const prev = exercises[i-1];
-        const next = exercises[i+1];
-
-        const joinsAbove = prev && prev.isSS;
-        const joinsBelow = current.isSS;
-
-        if (joinsAbove && joinsBelow) return "ss-block-middle";
-        if (joinsBelow) return "ss-block-start";
-        if (joinsAbove) return "ss-block-end";
-        
-        return "mb-4";
     }
 
     function renderRoutines() {
@@ -165,14 +126,9 @@
 
     function renderSes() {
         const cont = document.getElementById('ses-exercises');
-        cont.innerHTML = session.data.exercises.map((ex,i) => {
-            const ssClass = getSSClass(session.data.exercises, i);
-            return `
-            <div class="glass p-5 ${ssClass}">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 class="font-black text-blue-500 italic uppercase text-[11px]">${ex.name}</h4>
-                    ${ex.isSS ? '<span class="bg-amber-500 text-black text-[7px] px-2 py-0.5 rounded font-black uppercase">SS</span>' : ''}
-                </div>
+        cont.innerHTML = session.data.exercises.map((ex,i) => `
+            <div class="glass p-5">
+                <h4 class="font-black text-blue-500 italic uppercase text-[11px] mb-4">${ex.name}</h4>
                 <div class="flex gap-2 mb-1 px-1"><span class="w-6 label-col text-center">Set</span><span class="flex-1 label-col text-center italic">KG</span><span class="flex-1 label-col text-center italic">REPS</span><span class="w-12"></span></div>
                 <div class="space-y-3">
                 ${ex.sets.map((s,si) => `
@@ -184,40 +140,39 @@
                     </div>
                 `).join('')}
                 </div>
-            </div>`;
-        }).join('');
+            </div>`).join('');
         lucide.createIcons();
     }
 
     function tglSet(i,si) {
         const s = session.data.exercises[i].sets[si];
         s.done = !s.done; 
-        if(s.done && !session.data.exercises[i].isSS) startRest(); 
+        if(s.done) startRest(); 
         renderSes();
     }
 
     function renderEd() {
-        document.getElementById('ed-exercises').innerHTML = tempEd.map((ex,i) => {
-            const ssClass = getSSClass(tempEd, i);
-            return `
-            <div class="glass p-5 ${ssClass}">
+        document.getElementById('ed-exercises').innerHTML = tempEd.map((ex,i) => `
+            <div class="glass p-5">
                 <div class="flex justify-between mb-4 items-center">
                     <input oninput="tempEd[${i}].name=this.value" value="${ex.name}" class="bg-transparent font-black text-blue-500 outline-none uppercase text-xs w-2/3">
-                    <div class="flex gap-2">
-                        <button onclick="tempEd[${i}].isSS = !tempEd[${i}].isSS; renderEd()" class="px-2 py-1 rounded text-[9px] font-black ${ex.isSS ? 'bg-amber-500 text-black' : 'bg-zinc-800 text-zinc-500'}">SS</button>
-                        <button onclick="tempEd.splice(${i},1);renderEd()" class="text-zinc-800"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
+                    <button onclick="tempEd.splice(${i},1);renderEd()" class="text-zinc-800"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+                <div class="flex gap-2 mb-1 px-1">
+                    <span class="w-6 label-col text-center">Set</span>
+                    <span class="flex-1 label-col text-center">KG / KM</span>
+                    <span class="flex-1 label-col text-center">REPS / MIN</span>
+                    <span class="w-8"></span>
                 </div>
                 <div class="space-y-2">
                 ${ex.sets.map((s,si) => `<div class="flex gap-2 items-center"><span class="w-6 text-[10px] font-bold text-zinc-800 text-center">${si+1}</span>
-                    <input type="number" step="any" oninput="tempEd[${i}].sets[${si}].weight=this.value" value="${s.weight}" class="input-gym text-xs" placeholder="KG">
-                    <input type="number" step="any" oninput="tempEd[${i}].sets[${si}].reps=this.value" value="${s.reps}" class="input-gym text-xs" placeholder="REPS">
-                    <button onclick="tempEd[${i}].sets.splice(${si},1);renderEd()" class="text-zinc-800 p-1"><i data-lucide="minus" class="w-4 h-4"></i></button></div>
+                    <input type="number" step="any" oninput="tempEd[${i}].sets[${si}].weight=this.value" value="${s.weight}" class="input-gym text-xs" placeholder="0">
+                    <input type="number" step="any" oninput="tempEd[${i}].sets[${si}].reps=this.value" value="${s.reps}" class="input-gym text-xs" placeholder="0">
+                    <button onclick="tempEd[${i}].sets.splice(${si},1);renderEd()" class="w-8 text-zinc-800 p-1 flex justify-center"><i data-lucide="minus" class="w-4 h-4"></i></button></div>
                 `).join('')}
                 </div>
                 <button onclick="tempEd[${i}].sets.push({weight:0,reps:0});renderEd()" class="text-[9px] font-black text-zinc-700 uppercase mt-4">+ Serie</button>
-            </div>`;
-        }).join('');
+            </div>`).join('');
         lucide.createIcons();
     }
 
@@ -239,14 +194,22 @@
         if(!confirm("¿Finalizar?")) return;
         clearInterval(session.timer);
         const duration = document.getElementById('ses-timer').innerText;
+        const routineName = document.getElementById('ses-title').innerText;
         const date = new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
         const completed = session.data.exercises.map(ex => ({ name: ex.name, setsDone: ex.sets.filter(s => s.done).length })).filter(ex => ex.setsDone > 0);
-        sessionLogs.unshift({ name: document.getElementById('ses-title').innerText, date, duration, exercises: completed });
+        sessionLogs.unshift({ name: routineName, date, duration, exercises: completed });
         session.data.exercises.forEach(ex => {
-            let m = 0; ex.sets.forEach(s => { if(s.done && s.weight > m) m = parseFloat(s.weight); });
-            if(m>0) { if(!historyRecords[ex.name]) historyRecords[ex.name] = []; historyRecords[ex.name].push({date, weight: m}); }
+            let maxW = 0; 
+            ex.sets.forEach(s => { if(s.done && parseFloat(s.weight) > maxW) maxW = parseFloat(s.weight); });
+            if(maxW > 0) {
+                if(!historyRecords[ex.name]) historyRecords[ex.name] = [];
+                historyRecords[ex.name].push({date, weight: maxW});
+            }
         });
-        routines[document.getElementById('ses-title').innerText].exercises = session.data.exercises.map(ex=>({ name:ex.name, isSS: ex.isSS, sets:ex.sets.map(s=>({weight:s.weight, reps:s.reps})) }));
+        routines[routineName].exercises = session.data.exercises.map(ex => ({
+            name: ex.name,
+            sets: ex.sets.map(s => ({ weight: s.weight, reps: s.reps }))
+        }));
         saveAll();
         document.getElementById('screen-session').classList.add('hidden'); 
         nav('history');
@@ -267,7 +230,10 @@
     }
     function renderProgList() {
         const div = document.getElementById('progress-list');
-        div.innerHTML = Object.keys(historyRecords).sort().map(n => `<div onclick="openProg('${n}')" class="glass p-6 flex justify-between items-center"><div><h3 class="font-black italic uppercase text-xs">${n}</h3></div><div class="text-right text-xl font-black text-blue-500">${historyRecords[n][historyRecords[n].length-1].weight}<span class="text-[9px] ml-1">KG</span></div></div>`).join('');
+        div.innerHTML = Object.keys(historyRecords).sort().map(n => {
+            const last = historyRecords[n][historyRecords[n].length-1];
+            return `<div onclick="openProg('${n}')" class="glass p-6 flex justify-between items-center"><div><h3 class="font-black italic uppercase text-xs">${n}</h3></div><div class="text-right text-xl font-black text-blue-500">${last.weight}<span class="text-[9px] ml-1">KG</span></div></div>`
+        }).join('');
     }
     function openProg(n) {
         const logs = historyRecords[n]; document.getElementById('modal-name').innerText = n;
@@ -286,7 +252,7 @@
         tempEd = JSON.parse(JSON.stringify(r.exercises));
         renderEd();
     }
-    function addExEd() { tempEd.push({name:"Nuevo Ejercicio", isSS:false, sets:[{weight:0,reps:0}]}); renderEd(); }
+    function addExEd() { tempEd.push({name:"Nuevo Ejercicio", sets:[{weight:0,reps:0}]}); renderEd(); }
     function saveRoutine() {
         const n = document.getElementById('ed-name').value;
         if(!n) return;

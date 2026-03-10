@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MoonPro V17.6</title>
+    <title>MoonPro V17.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -32,6 +32,23 @@
             <div class="flex gap-4">
                 <button onclick="closeConfirm()" class="flex-1 py-4 text-xs font-black uppercase text-zinc-500 bg-zinc-900 rounded-2xl">No</button>
                 <button onclick="processFinish()" class="flex-1 py-4 bg-blue-600 rounded-2xl text-xs font-black uppercase shadow-lg shadow-blue-900/20">Sí, Fin</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hist-modal" class="hidden fixed inset-0 bg-black z-[210] p-6 overflow-y-auto flex flex-col items-center">
+        <div class="w-full max-w-sm mt-10 modal-in">
+            <div class="flex justify-between mb-8 items-center">
+                <h2 id="hist-modal-title" class="text-3xl font-black text-blue-500 italic uppercase"></h2>
+                <button onclick="closeHistDetail()" class="text-zinc-500 p-2"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="glass p-6 border-zinc-800 mb-6">
+                <div class="flex justify-between items-center border-b border-zinc-900 pb-4 mb-4">
+                    <span id="hist-modal-date" class="text-xs font-bold text-zinc-500 uppercase"></span>
+                    <span id="hist-modal-time" class="text-xs font-black text-white bg-blue-600 px-3 py-1 rounded-full"></span>
+                </div>
+                <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mb-4">Ejercicios Realizados</p>
+                <ul id="hist-modal-ex" class="space-y-4"></ul>
             </div>
         </div>
     </div>
@@ -69,7 +86,7 @@
         <button onclick="openEditor()" class="w-full mt-8 py-5 border-2 border-dashed border-zinc-800 rounded-[2rem] text-zinc-500 font-bold hover:bg-zinc-900 transition-colors">+ Nueva Rutina</button>
     </div>
 
-    <div id="screen-history" class="hidden p-6">
+    <div id="screen-history" class="hidden p-6 pb-32">
         <header class="py-10"><h1 class="text-4xl font-black italic uppercase">Historial</h1></header>
         <div id="history-sessions-list" class="space-y-4"></div>
     </div>
@@ -140,26 +157,14 @@
     }
 
     function nav(s) {
-        // Ocultar todas las pantallas y modales
         document.querySelectorAll('body > div').forEach(d => { if(!d.id.includes('overlay')) d.classList.add('hidden'); });
-        
-        // Asegurar que el nav principal esté visible
         document.getElementById('main-nav').classList.remove('hidden');
+        if(document.getElementById('screen-'+s)) document.getElementById('screen-'+s).classList.remove('hidden');
         
-        // Mostrar la pantalla solicitada
-        if(document.getElementById('screen-'+s)) {
-            document.getElementById('screen-'+s).classList.remove('hidden');
-        }
-        
-        // Actualizar colores del menú
         document.querySelectorAll('nav button').forEach(b => b.classList.add('text-zinc-600'));
         const btn = document.getElementById('btn-' + (s === 'progress' ? 'sett' : s.substring(0,4)));
-        if(btn) {
-            btn.classList.remove('text-zinc-600');
-            btn.classList.add('tab-active');
-        }
+        if(btn) { btn.classList.remove('text-zinc-600'); btn.classList.add('tab-active'); }
 
-        // Renderizar datos según la pantalla
         if(s==='main') renderRoutines();
         if(s==='history') renderHistory();
         if(s==='progress') renderProgList();
@@ -169,15 +174,13 @@
     // --- LÓGICA DEL EDITOR ---
     function openEditor(n = null) {
         document.getElementById('screen-editor').classList.remove('hidden');
-        document.getElementById('main-nav').classList.add('hidden'); // Ocultar nav al editar
+        document.getElementById('main-nav').classList.add('hidden'); 
         
         if (n && routines[n]) {
-            // Editar existente
             document.getElementById('ed-name').value = n;
             document.getElementById('ed-rest').value = routines[n].rest || 90;
             tempEd = JSON.parse(JSON.stringify(routines[n].exercises));
         } else {
-            // Nueva rutina
             document.getElementById('ed-name').value = "";
             document.getElementById('ed-rest').value = 90;
             tempEd = [{ name: "Ejercicio 1", sets: [{ weight: '', reps: '' }] }];
@@ -208,26 +211,14 @@
         lucide.createIcons();
     }
 
-    function addExEd() { 
-        tempEd.push({ name: "Nuevo Ejercicio", sets: [{ weight: '', reps: '' }] }); 
-        renderEd(); 
-    }
-
+    function addExEd() { tempEd.push({ name: "Nuevo Ejercicio", sets: [{ weight: '', reps: '' }] }); renderEd(); }
     function saveRoutine() {
         const n = document.getElementById('ed-name').value.trim();
-        if(!n) {
-            alert("⚠️ Por favor, ponle un nombre a tu rutina antes de guardar.");
-            return; 
-        }
+        if(!n) { alert("⚠️ Por favor, ponle un nombre a tu rutina antes de guardar."); return; }
         routines[n] = { rest: parseInt(document.getElementById('ed-rest').value) || 90, exercises: tempEd };
-        saveAll(); 
-        closeEditor();
+        saveAll(); closeEditor();
     }
-    
-    function closeEditor() { 
-        document.getElementById('screen-editor').classList.add('hidden'); 
-        nav('main'); 
-    }
+    function closeEditor() { document.getElementById('screen-editor').classList.add('hidden'); nav('main'); }
 
     // --- LÓGICA DE ENTRENAMIENTO ---
     function startSes(n) {
@@ -237,13 +228,12 @@
         
         document.getElementById('ses-title').innerText = n;
         document.getElementById('screen-session').classList.remove('hidden');
-        document.getElementById('main-nav').classList.add('hidden'); // Ocultar nav al entrenar
+        document.getElementById('main-nav').classList.add('hidden');
         
         session.timer = setInterval(() => {
             const d = Math.floor((Date.now()-session.start)/1000);
             document.getElementById('ses-timer').innerText = Math.floor(d/60).toString().padStart(2,'0')+":"+(d%60).toString().padStart(2,'0');
         }, 1000);
-        
         renderSes();
     }
 
@@ -266,103 +256,51 @@
         lucide.createIcons();
     }
 
-    function tglSet(i,si) { 
-        const s = session.data.exercises[i].sets[si]; 
-        s.done = !s.done; 
-        if(s.done) startRest(); 
-        renderSes(); 
-    }
-
-    function startRest() { 
-        stopRest(); 
-        let t = session.data.rest || 90; 
-        document.getElementById('rest-overlay').classList.remove('hidden'); 
-        restInt = setInterval(() => { 
-            t--; 
-            document.getElementById('rest-clock').innerText = Math.floor(t/60).toString().padStart(2,'0')+":"+(t%60).toString().padStart(2,'0'); 
-            if(t<=0) stopRest(); 
-        }, 1000); 
-    }
-    
-    function stopRest() { 
-        clearInterval(restInt); 
-        document.getElementById('rest-overlay').classList.add('hidden'); 
-    }
+    function tglSet(i,si) { const s = session.data.exercises[i].sets[si]; s.done = !s.done; if(s.done) startRest(); renderSes(); }
+    function startRest() { stopRest(); let t = session.data.rest || 90; document.getElementById('rest-overlay').classList.remove('hidden'); restInt = setInterval(() => { t--; document.getElementById('rest-clock').innerText = Math.floor(t/60).toString().padStart(2,'0')+":"+(t%60).toString().padStart(2,'0'); if(t<=0) stopRest(); }, 1000); }
+    function stopRest() { clearInterval(restInt); document.getElementById('rest-overlay').classList.add('hidden'); }
 
     // --- LÓGICA DE FINALIZAR SESIÓN ---
-    function openConfirm() { 
-        document.getElementById('modal-confirm').classList.remove('hidden'); 
-        lucide.createIcons(); 
-    }
-    
-    function closeConfirm() { 
-        document.getElementById('modal-confirm').classList.add('hidden'); 
-    }
-
+    function openConfirm() { document.getElementById('modal-confirm').classList.remove('hidden'); lucide.createIcons(); }
+    function closeConfirm() { document.getElementById('modal-confirm').classList.add('hidden'); }
     function processFinish() {
         try {
-            // 1. Parar el cronómetro inmediatamente
             clearInterval(session.timer);
             const duration = document.getElementById('ses-timer').innerText;
             const routineName = document.getElementById('ses-title').innerText;
             const date = new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
             
-            // 2. Extraer ejercicios completados
-            const completed = session.data.exercises.map(ex => ({ 
-                name: ex.name, 
-                setsDone: ex.sets.filter(s => s.done).length 
-            })).filter(ex => ex.setsDone > 0);
+            const completed = session.data.exercises.map(ex => ({ name: ex.name, setsDone: ex.sets.filter(s => s.done).length })).filter(ex => ex.setsDone > 0);
             
-            // 3. Guardar log en el historial
             if (completed.length > 0 || duration !== "00:00") {
                 sessionLogs.unshift({ name: routineName, date, duration, exercises: completed });
             }
             
-            // 4. Actualizar Records y Rutina Original (¡Corregido!)
             session.data.exercises.forEach(ex => {
-                let maxW = 0; 
-                ex.sets.forEach(s => { 
-                    if(s.done && parseFloat(s.weight) > maxW) maxW = parseFloat(s.weight); 
-                });
-                
+                let maxW = 0; ex.sets.forEach(s => { if(s.done && parseFloat(s.weight) > maxW) maxW = parseFloat(s.weight); });
                 if(maxW > 0) {
                     if(!historyRecords[ex.name]) historyRecords[ex.name] = [];
                     historyRecords[ex.name].push({date, weight: maxW});
                 }
             });
 
-            // Guardar los nuevos pesos en la rutina original para la próxima vez
             if(routines[routineName]) {
-                routines[routineName].exercises = session.data.exercises.map(ex => ({ 
-                    name: ex.name, 
-                    sets: ex.sets.map(s => ({ weight: s.weight, reps: s.reps })) 
-                }));
+                routines[routineName].exercises = session.data.exercises.map(ex => ({ name: ex.name, sets: ex.sets.map(s => ({ weight: s.weight, reps: s.reps })) }));
             }
-
             saveAll();
 
-            // 5. Preparar Resumen Visual
             document.getElementById('sum-time').innerText = duration;
             if(completed.length > 0) {
-                document.getElementById('sum-ex-list').innerHTML = completed.map(e => `
-                    <li class="flex items-center gap-3 text-xs font-bold uppercase italic text-zinc-300">
-                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> ${e.name}
-                    </li>`).join('');
+                document.getElementById('sum-ex-list').innerHTML = completed.map(e => `<li class="flex items-center gap-3 text-xs font-bold uppercase italic text-zinc-300"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> ${e.name}</li>`).join('');
             } else {
                 document.getElementById('sum-ex-list').innerHTML = `<li class="text-xs font-bold uppercase italic text-zinc-500">Ningún ejercicio completado</li>`;
             }
 
-            // 6. Cambiar de pantalla (Cerrar confirm, sesión y mostrar resumen)
             document.getElementById('modal-confirm').classList.add('hidden');
             document.getElementById('screen-session').classList.add('hidden');
             document.getElementById('screen-summary').classList.remove('hidden');
             lucide.createIcons();
-
-        } catch(error) {
-            console.error("Error al finalizar:", error);
-            // Backup por si algo falla, te saca a inicio
-            nav('main');
-        }
+        } catch(error) { console.error("Error:", error); nav('main'); }
     }
 
     // --- RENDERIZADOS SECUNDARIOS ---
@@ -385,31 +323,70 @@
         lucide.createIcons();
     }
 
+    // --- HISTORIAL MEJORADO ---
     function renderHistory() {
         const div = document.getElementById('history-sessions-list');
-        div.innerHTML = sessionLogs.map(log => `
-            <div class="glass p-5 border-l-2 border-blue-600 mb-4">
-                <h3 class="font-black italic uppercase text-[11px]">${log.name}</h3>
-                <p class="text-[9px] text-zinc-600 font-black uppercase mt-1">${log.date} • <span class="text-blue-500">${log.duration}</span></p>
+        if (sessionLogs.length === 0) {
+            div.innerHTML = `<p class="text-center text-xs text-zinc-600 font-bold uppercase mt-10">Aún no hay sesiones guardadas</p>`;
+            return;
+        }
+        
+        div.innerHTML = sessionLogs.map((log, index) => `
+            <div class="glass p-5 border-l-2 border-blue-600 mb-4 flex justify-between items-center cursor-pointer hover:bg-zinc-900/50 transition-colors" onclick="openHistDetail(${index})">
+                <div>
+                    <h3 class="font-black italic uppercase text-xs">${log.name}</h3>
+                    <p class="text-[9px] text-zinc-600 font-black uppercase mt-1 tracking-widest">${log.date} • <span class="text-blue-500">${log.duration}</span></p>
+                </div>
+                <button onclick="deleteHistoryLog(${index}, event)" class="text-zinc-700 p-2 hover:text-red-500 transition-colors">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
             </div>`).join('');
+        lucide.createIcons();
+    }
+
+    function openHistDetail(index) {
+        const log = sessionLogs[index];
+        document.getElementById('hist-modal-title').innerText = log.name;
+        document.getElementById('hist-modal-date').innerText = log.date;
+        document.getElementById('hist-modal-time').innerText = log.duration;
+        
+        const exList = document.getElementById('hist-modal-ex');
+        if(log.exercises && log.exercises.length > 0) {
+            exList.innerHTML = log.exercises.map(e => `
+                <li class="flex items-center justify-between text-xs font-bold uppercase text-zinc-300 bg-zinc-900/50 p-3 rounded-xl">
+                    <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> ${e.name}</div>
+                    <span class="text-[10px] text-zinc-500">${e.setsDone} series</span>
+                </li>`).join('');
+        } else {
+            exList.innerHTML = `<li class="text-xs font-bold uppercase text-zinc-500 text-center py-4">Sin ejercicios completados</li>`;
+        }
+        
+        document.getElementById('hist-modal').classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    function closeHistDetail() { document.getElementById('hist-modal').classList.add('hidden'); }
+
+    function deleteHistoryLog(index, event) {
+        event.stopPropagation(); // Evita que se abra el detalle al borrar
+        if(confirm("¿Seguro que quieres borrar este registro del historial?")) {
+            sessionLogs.splice(index, 1);
+            saveAll();
+            renderHistory();
+        }
     }
 
     function renderProgList() {
         const div = document.getElementById('progress-list');
         div.innerHTML = Object.keys(historyRecords).sort().map(n => {
             const r = historyRecords[n];
-            return `
-            <div onclick="openProg('${n}')" class="glass p-6 flex justify-between items-center cursor-pointer">
-                <div><h3 class="font-black italic uppercase text-xs">${n}</h3></div>
-                <div class="text-right text-xl font-black text-blue-500">${r[r.length-1].weight}<span class="text-[9px] ml-1 text-zinc-500">KG</span></div>
-            </div>`
+            return `<div onclick="openProg('${n}')" class="glass p-6 flex justify-between items-center cursor-pointer"><div><h3 class="font-black italic uppercase text-xs">${n}</h3></div><div class="text-right text-xl font-black text-blue-500">${r[r.length-1].weight}<span class="text-[9px] ml-1 text-zinc-500">KG</span></div></div>`
         }).join('');
     }
 
     // --- RECORDS MODAL ---
     function openProg(n) {
-        const logs = historyRecords[n]; 
-        document.getElementById('modal-name').innerText = n;
+        const logs = historyRecords[n]; document.getElementById('modal-name').innerText = n;
         document.getElementById('prog-modal').classList.remove('hidden');
         const max = Math.max(...logs.map(l=>l.weight));
         document.getElementById('chart').innerHTML = logs.slice(-7).map(l=>`<div style="height:${(l.weight/max)*100}%; width:100%; background:#3b82f6; border-radius:4px 4px 0 0;"></div>`).join('');
@@ -420,10 +397,7 @@
 
     // --- UTILIDADES ---
     function exportData() { navigator.clipboard.writeText(JSON.stringify({routines, historyRecords, sessionLogs})).then(() => alert("Copiado al portapapeles. ¡Guarda este texto en un lugar seguro!")); }
-    function importData() { 
-        const d = JSON.parse(prompt("Pega el código de backup aquí") || "{}");
-        if(d.routines) { routines=d.routines; historyRecords=d.historyRecords; sessionLogs=d.sessionLogs; saveAll(); location.reload(); }
-    }
+    function importData() { const d = JSON.parse(prompt("Pega el código de backup aquí") || "{}"); if(d.routines) { routines=d.routines; historyRecords=d.historyRecords; sessionLogs=d.sessionLogs; saveAll(); location.reload(); } }
     function resetApp() { if(confirm("¿Seguro que quieres borrar TODOS tus datos y empezar de cero?")) { localStorage.clear(); location.reload(); } }
     function deleteRoutine(n) { if(confirm(`¿Seguro que quieres eliminar la rutina ${n}?`)) { delete routines[n]; saveAll(); renderRoutines(); } }
 

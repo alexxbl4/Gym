@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MoonPro V16</title>
+    <title>MoonPro V16.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; -webkit-tap-highlight-color: transparent; }
-        .glass { background: #111; border: 1px solid #222; border-radius: 24px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        .glass { background: #111; border: 1px solid #222; border-radius: 24px; transition: all 0.2s; }
         .input-gym { background: #1c1c1e; border-radius: 10px; text-align: center; font-weight: 800; padding: 10px; outline: none; width: 100%; color: white; border: 1px solid transparent; font-size: 14px; }
         .input-gym:focus { border-color: #3b82f6; }
         .row-done { background: rgba(16, 185, 129, 0.15) !important; border-color: #10b981 !important; }
@@ -17,12 +17,14 @@
         .tab-active { color: #3b82f6 !important; }
         .label-col { font-size: 8px; font-weight: 800; color: #444; text-transform: uppercase; }
         .ghost-val { font-size: 9px; font-weight: 700; color: #3b82f6; opacity: 0.6; margin-top: 2px; }
-        /* Lógica visual de Superseries */
-        .ss-active { border-left: 4px solid #f59e0b !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; margin-bottom: 0 !important; border-bottom: 1px dashed #222 !important; }
-        .ss-child { border-left: 4px solid #f59e0b !important; border-top-left-radius: 0 !important; border-top-right-radius: 0 !important; }
+        
+        /* FIX DEFINITIVO SUPERSERIES */
+        .ss-block-start { border-left: 4px solid #f59e0b !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; margin-bottom: 0 !important; border-bottom: 1px dashed #222 !important; }
+        .ss-block-middle { border-left: 4px solid #f59e0b !important; border-radius: 0 !important; margin-bottom: 0 !important; border-top: none !important; border-bottom: 1px dashed #222 !important; }
+        .ss-block-end { border-left: 4px solid #f59e0b !important; border-top-left-radius: 0 !important; border-top-right-radius: 0 !important; border-top: none !important; margin-top: 0 !important; }
     </style>
 </head>
-<body class="pb-28">
+<body class="pb-32">
 
     <div id="rest-overlay" class="hidden fixed top-0 left-0 right-0 z-[100] bg-blue-600 p-6 flex justify-between items-center shadow-2xl">
         <div class="text-left"><p class="text-[10px] font-black uppercase opacity-70">Descanso</p><p id="rest-clock" class="text-3xl font-black">01:30</p></div>
@@ -51,7 +53,7 @@
         </div>
     </div>
 
-    <div id="screen-progress" class="hidden p-6 pb-32">
+    <div id="screen-progress" class="hidden p-6">
         <header class="py-10 flex items-center gap-4"><button onclick="nav('settings')" class="text-zinc-500"><i data-lucide="chevron-left"></i></button><h1 class="text-4xl font-black italic uppercase">Records</h1></header>
         <div id="progress-list" class="space-y-4"></div>
     </div>
@@ -64,7 +66,7 @@
         <main id="ses-exercises" class="p-4 space-y-6"></main>
     </div>
 
-    <div id="screen-editor" class="hidden fixed inset-0 bg-black z-[70] overflow-y-auto p-6 pb-32">
+    <div id="screen-editor" class="hidden fixed inset-0 bg-black z-[70] overflow-y-auto p-6 pb-40">
         <header class="flex justify-between mb-8 items-center"><button onclick="closeEditor()" class="text-zinc-500 font-bold">Atrás</button><button onclick="saveRoutine()" class="bg-blue-500 px-8 py-2.5 rounded-xl font-black text-xs uppercase">Guardar</button></header>
         <input type="text" id="ed-name" placeholder="Nombre Rutina" class="w-full bg-zinc-900 rounded-2xl p-5 font-bold mb-4 outline-none text-lg">
         <div class="glass p-5 mb-8 flex justify-between items-center"><span class="text-xs font-bold uppercase text-zinc-500">Descanso (seg)</span><input type="number" id="ed-rest" value="90" class="w-20 bg-transparent text-right font-black text-blue-500 outline-none text-2xl"></div>
@@ -85,11 +87,17 @@
     </nav>
 
 <script>
-    let routines = JSON.parse(localStorage.getItem('moonpro_routines')) || {};
-    let historyRecords = JSON.parse(localStorage.getItem('moonpro_records')) || {}; 
-    let sessionLogs = JSON.parse(localStorage.getItem('moonpro_logs')) || []; 
+    let routines = JSON.parse(localStorage.getItem('moonpro_v16_routines')) || {};
+    let historyRecords = JSON.parse(localStorage.getItem('moonpro_v16_records')) || {}; 
+    let sessionLogs = JSON.parse(localStorage.getItem('moonpro_v16_logs')) || []; 
     let session = { start: null, timer: null, data: null, rest: 90 };
     let restInt = null, tempEd = [];
+
+    function saveAll() {
+        localStorage.setItem('moonpro_v16_routines', JSON.stringify(routines));
+        localStorage.setItem('moonpro_v16_records', JSON.stringify(historyRecords));
+        localStorage.setItem('moonpro_v16_logs', JSON.stringify(sessionLogs));
+    }
 
     function nav(s) {
         document.querySelectorAll('body > div').forEach(d => { if(!d.id.includes('overlay') && !d.id.includes('modal')) d.classList.add('hidden'); });
@@ -102,19 +110,27 @@
         lucide.createIcons();
     }
 
-    // --- LOGICA RUTINAS (CON ELIMINAR) ---
+    // --- LÓGICA DE CLASES PARA SUPERSERIES ---
+    function getSSClass(exercises, i) {
+        const current = exercises[i];
+        const prev = exercises[i-1];
+        const next = exercises[i+1];
+
+        if (current.isSS && (!prev || !prev.isSS)) return "ss-block-start";
+        if (current.isSS && prev && prev.isSS) return "ss-block-middle";
+        if (!current.isSS && prev && prev.isSS) return "ss-block-end";
+        return "mb-4";
+    }
+
     function renderRoutines() {
         const div = document.getElementById('routine-list');
         div.innerHTML = Object.keys(routines).map(n => `
             <div class="glass p-6">
                 <div class="flex justify-between mb-6">
-                    <div>
-                        <h3 class="text-xl font-black italic tracking-tighter uppercase">${n}</h3>
-                        <p class="text-[9px] text-zinc-600 font-black mt-1 uppercase">${routines[n].exercises.length} Ejercicios</p>
-                    </div>
+                    <div><h3 class="text-xl font-black italic tracking-tighter uppercase">${n}</h3><p class="text-[9px] text-zinc-600 font-black mt-1 uppercase">${routines[n].exercises.length} Ejercicios</p></div>
                     <div class="flex gap-2">
-                        <button onclick="deleteRoutine('${n}')" class="text-red-900/50 p-2"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                        <button onclick="openEditor('${n}')" class="text-zinc-800 p-2"><i data-lucide="edit-3" class="w-5 h-5"></i></button>
+                        <button onclick="deleteRoutine('${n}')" class="text-red-900/50 p-2"><i data-lucide="trash-2"></i></button>
+                        <button onclick="openEditor('${n}')" class="text-zinc-800 p-2"><i data-lucide="edit-3"></i></button>
                     </div>
                 </div>
                 <button onclick="startSes('${n}')" class="w-full bg-blue-600 py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Entrenar</button>
@@ -123,32 +139,19 @@
         lucide.createIcons();
     }
 
-    function deleteRoutine(n) {
-        if(confirm(`¿Eliminar la rutina "${n}"?`)) {
-            delete routines[n];
-            saveAll();
-            renderRoutines();
-        }
-    }
+    function deleteRoutine(n) { if(confirm(`¿Eliminar ${n}?`)) { delete routines[n]; saveAll(); renderRoutines(); } }
 
-    // --- LOGICA ENTRENAMIENTO (SUPERSERIES CORREGIDAS) ---
     function renderSes() {
         const cont = document.getElementById('ses-exercises');
         cont.innerHTML = session.data.exercises.map((ex,i) => {
-            const isSS = ex.isSS; // Este ejercicio inicia una SS
-            const prevWasSS = session.data.exercises[i-1]?.isSS; // El anterior inició una SS, por lo que yo soy el "hijo"
-            
-            let css = "glass p-5 ";
-            if(isSS) css += "ss-active ";
-            if(prevWasSS) css += "ss-child ";
-
+            const ssClass = getSSClass(session.data.exercises, i);
             return `
-            <div class="${css}">
+            <div class="glass p-5 ${ssClass}">
                 <div class="flex justify-between items-center mb-4">
-                    <h4 class="font-black text-blue-500 italic uppercase text-[11px] tracking-tight">${ex.name}</h4>
-                    ${isSS ? '<span class="bg-amber-500 text-black text-[8px] px-2 py-0.5 rounded font-black">SÚPER SERIE</span>' : ''}
+                    <h4 class="font-black text-blue-500 italic uppercase text-[11px]">${ex.name}</h4>
+                    ${ex.isSS ? '<span class="bg-amber-500 text-black text-[7px] px-2 py-0.5 rounded font-black uppercase">SS Activa</span>' : ''}
                 </div>
-                <div class="flex gap-2 mb-1 px-1"><span class="w-6 label-col text-center">Set</span><span class="flex-1 label-col text-center italic">KG / KM</span><span class="flex-1 label-col text-center italic">REPS / MIN</span><span class="w-12"></span></div>
+                <div class="flex gap-2 mb-1 px-1"><span class="w-6 label-col text-center">Set</span><span class="flex-1 label-col text-center">KG / KM</span><span class="flex-1 label-col text-center">REPS / MIN</span><span class="w-12"></span></div>
                 <div class="space-y-3">
                 ${ex.sets.map((s,si) => `
                     <div class="flex items-center gap-2 p-1 rounded-xl transition-all ${s.done?'row-done':''}">
@@ -159,23 +162,23 @@
                     </div>
                 `).join('')}
                 </div>
-            </div>
-        `}).join('');
+            </div>`;
+        }).join('');
         lucide.createIcons();
     }
 
     function tglSet(i,si) {
         const s = session.data.exercises[i].sets[si];
         s.done = !s.done; 
-        const isSS = session.data.exercises[i].isSS; // Si este ejercicio tiene SS activa, no descansamos al terminar la serie
-        if(s.done && !isSS) startRest(); 
+        if(s.done && !session.data.exercises[i].isSS) startRest(); 
         renderSes();
     }
 
-    // --- EDITOR ---
     function renderEd() {
-        document.getElementById('ed-exercises').innerHTML = tempEd.map((ex,i) => `
-            <div class="glass p-5 ${ex.isSS ? 'ss-active' : ''} ${tempEd[i-1]?.isSS ? 'ss-child' : ''}">
+        document.getElementById('ed-exercises').innerHTML = tempEd.map((ex,i) => {
+            const ssClass = getSSClass(tempEd, i);
+            return `
+            <div class="glass p-5 ${ssClass}">
                 <div class="flex justify-between mb-4 items-center">
                     <input oninput="tempEd[${i}].name=this.value" value="${ex.name}" class="bg-transparent font-black text-blue-500 outline-none uppercase text-xs w-2/3">
                     <div class="flex gap-2">
@@ -191,17 +194,11 @@
                 `).join('')}
                 </div>
                 <button onclick="tempEd[${i}].sets.push({weight:0,reps:0});renderEd()" class="text-[9px] font-black text-zinc-700 uppercase mt-4">+ Serie</button>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
         lucide.createIcons();
     }
 
-    // --- UTILIDADES ---
-    function saveAll() {
-        localStorage.setItem('moonpro_routines', JSON.stringify(routines));
-        localStorage.setItem('moonpro_records', JSON.stringify(historyRecords));
-        localStorage.setItem('moonpro_logs', JSON.stringify(sessionLogs));
-    }
     function startSes(n) {
         session.data = JSON.parse(JSON.stringify(routines[n]));
         session.data.exercises.forEach(ex => ex.sets.forEach(s => s.done = false));
@@ -215,6 +212,7 @@
         }, 1000);
         renderSes();
     }
+
     function finishSession() {
         if(!confirm("¿Finalizar?")) return;
         clearInterval(session.timer);
@@ -231,6 +229,7 @@
         document.getElementById('screen-session').classList.add('hidden'); 
         nav('history');
     }
+
     function stopRest() { clearInterval(restInt); document.getElementById('rest-overlay').classList.add('hidden'); }
     function startRest() {
         stopRest(); let t = session.rest;
@@ -252,7 +251,7 @@
         const logs = historyRecords[n]; document.getElementById('modal-name').innerText = n;
         document.getElementById('prog-modal').classList.remove('hidden');
         const max = Math.max(...logs.map(l=>l.weight));
-        document.getElementById('chart').innerHTML = logs.slice(-7).map(l=>`<div class="bar" style="height:${(l.weight/max)*100}%; width:100%; background:#1e40af; border-radius:4px 4px 0 0;"></div>`).join('');
+        document.getElementById('chart').innerHTML = logs.slice(-7).map(l=>`<div style="height:${(l.weight/max)*100}%; width:100%; background:#1e40af; border-radius:4px 4px 0 0;"></div>`).join('');
         document.getElementById('modal-logs').innerHTML = logs.slice().reverse().map(l=>`<div class="glass p-4 flex justify-between items-center opacity-60 text-[10px] font-bold"><span>${l.date}</span><span>${l.weight} KG</span></div>`).join('');
         lucide.createIcons();
     }

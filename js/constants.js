@@ -1,18 +1,9 @@
 export const STORAGE_KEYS = {
-  routines: 'moonpro_routines',
+  app: 'moonpro_app_v3',
 };
 
+export const APP_SCHEMA_VERSION = 3;
 export const DEFAULT_REST = 90;
-
-export const DEFAULT_EXERCISES = [
-  { name: 'Press Banca Plano', cat: 'Pecho' },
-  { name: 'Dominadas', cat: 'Espalda' },
-  { name: 'Press Militar Barra', cat: 'Hombro' },
-  { name: 'Curl Barra', cat: 'Bíceps' },
-  { name: 'Press Francés', cat: 'Tríceps' },
-  { name: 'Sentadilla Barra', cat: 'Pierna' },
-  { name: 'Plancha', cat: 'Core' },
-];
 
 export const CARDIO_KEYWORDS = [
   'cinta',

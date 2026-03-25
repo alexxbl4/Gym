@@ -71,6 +71,13 @@ function persist() {
   });
 }
 
+function estimate1RM(weight, reps) {
+  const w = Number(weight) || 0;
+  const r = Number(reps) || 0;
+  if (!w || !r) return 0;
+  return w * (1 + r / 30);
+}
+
 export function setScreen(screen) {
   state.screen = screen;
 }
@@ -308,16 +315,46 @@ export function finishSession(durationSec) {
 
   let completedSets = 0;
   let volume = 0;
+  const exerciseDetails = [];
 
   state.activeSession.exercises.forEach(exercise => {
-    exercise.sets.forEach(setItem => {
-      if (setItem.done) {
-        completedSets += 1;
+    let exerciseVolume = 0;
+    let bestWeight = 0;
+    let bestEstimated1RM = 0;
+    let completedExerciseSets = 0;
+
+    const doneSets = exercise.sets
+      .filter(setItem => setItem.done)
+      .map(setItem => {
         const weight = Number(setItem.weight) || 0;
         const reps = Number(setItem.reps) || 0;
+
+        completedSets += 1;
+        completedExerciseSets += 1;
         volume += weight * reps;
-      }
-    });
+        exerciseVolume += weight * reps;
+        bestWeight = Math.max(bestWeight, weight);
+        bestEstimated1RM = Math.max(bestEstimated1RM, estimate1RM(weight, reps));
+
+        return {
+          weight,
+          reps,
+          done: true,
+        };
+      });
+
+    if (doneSets.length > 0) {
+      exerciseDetails.push({
+        exerciseId: exercise.id,
+        name: exercise.name,
+        cardio: exercise.cardio,
+        completedSets: completedExerciseSets,
+        volume: exerciseVolume,
+        bestWeight,
+        bestEstimated1RM,
+        sets: doneSets,
+      });
+    }
   });
 
   state.logs.unshift({
@@ -329,6 +366,7 @@ export function finishSession(durationSec) {
     durationSec,
     completedSets,
     volume,
+    exercises: exerciseDetails,
   });
 
   state.activeSession = null;
@@ -351,6 +389,76 @@ export function getStats() {
     totalVolume,
     totalSets,
     totalMinutes,
+  };
+}
+
+export function getExerciseProgressList() {
+  const map = new Map();
+
+  state.logs.forEach(log => {
+    (log.exercises || []).forEach(exercise => {
+      if (!map.has(exercise.name)) {
+        map.set(exercise.name, {
+          name: exercise.name,
+          sessions: 0,
+          bestWeight: 0,
+          bestVolume: 0,
+          bestEstimated1RM: 0,
+          lastDate: log.endedAt,
+        });
+      }
+
+      const current = map.get(exercise.name);
+      current.sessions += 1;
+      current.bestWeight = Math.max(current.bestWeight, Number(exercise.bestWeight) || 0);
+      current.bestVolume = Math.max(current.bestVolume, Number(exercise.volume) || 0);
+      current.bestEstimated1RM = Math.max(
+        current.bestEstimated1RM,
+        Number(exercise.bestEstimated1RM) || 0
+      );
+
+      if (new Date(log.endedAt) > new Date(current.lastDate)) {
+        current.lastDate = log.endedAt;
+      }
+    });
+  });
+
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+}
+
+export function getExerciseDetail(name) {
+  const history = state.logs
+    .filter(log => (log.exercises || []).some(ex => ex.name === name))
+    .map(log => {
+      const exercise = log.exercises.find(ex => ex.name === name);
+      return {
+        date: log.endedAt,
+        routineName: log.routineName,
+        durationSec: log.durationSec,
+        volume: Number(exercise.volume) || 0,
+        bestWeight: Number(exercise.bestWeight) || 0,
+        bestEstimated1RM: Number(exercise.bestEstimated1RM) || 0,
+        completedSets: Number(exercise.completedSets) || 0,
+        sets: exercise.sets || [],
+      };
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const prs = history.reduce(
+    (acc, item) => {
+      acc.bestWeight = Math.max(acc.bestWeight, item.bestWeight);
+      acc.bestVolume = Math.max(acc.bestVolume, item.volume);
+      acc.bestEstimated1RM = Math.max(acc.bestEstimated1RM, item.bestEstimated1RM);
+      acc.sessions += 1;
+      return acc;
+    },
+    { bestWeight: 0, bestVolume: 0, bestEstimated1RM: 0, sessions: 0 }
+  );
+
+  return {
+    name,
+    prs,
+    history,
   };
 }
 

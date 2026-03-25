@@ -1,4 +1,9 @@
-import { CARDIO_KEYWORDS, DEFAULT_REST } from './constants.js';
+import {
+  APP_SCHEMA_VERSION,
+  CARDIO_KEYWORDS,
+  DEFAULT_LIBRARY,
+  DEFAULT_REST,
+} from './constants.js';
 import { clearAppData, loadAppData, saveAppData } from './storage.js';
 
 function createId(prefix = 'id') {
@@ -43,16 +48,26 @@ export const state = {
   screen: 'routines',
   routines: persisted.routines || {},
   logs: persisted.logs || [],
+  customExercises: persisted.customExercises || [],
   editingRoutineId: null,
   draftRoutine: createRoutine(),
   activeSession: null,
+  libraryQuery: '',
+  libraryCategory: 'Todos',
+  libraryTarget: 'editor',
+  restTimer: {
+    active: false,
+    total: 0,
+    remaining: 0,
+  },
 };
 
 function persist() {
   return saveAppData({
-    _schemaVersion: 3,
+    _schemaVersion: APP_SCHEMA_VERSION,
     routines: state.routines,
     logs: state.logs,
+    customExercises: state.customExercises,
   });
 }
 
@@ -64,6 +79,52 @@ export function getRoutinesArray() {
   return Object.values(state.routines).sort(
     (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
   );
+}
+
+export function getFullLibrary() {
+  return [...DEFAULT_LIBRARY, ...state.customExercises];
+}
+
+export function setLibraryQuery(query) {
+  state.libraryQuery = query.trim();
+}
+
+export function setLibraryCategory(category) {
+  state.libraryCategory = category;
+}
+
+export function getFilteredLibrary() {
+  const q = state.libraryQuery.toLowerCase();
+  return getFullLibrary().filter(item => {
+    const catOk = state.libraryCategory === 'Todos' || item.cat === state.libraryCategory;
+    const qOk = !q || item.name.toLowerCase().includes(q);
+    return catOk && qOk;
+  });
+}
+
+export function customExerciseExists(name) {
+  const lower = name.trim().toLowerCase();
+  return getFullLibrary().some(item => item.name.trim().toLowerCase() === lower);
+}
+
+export function saveCustomExercise(name, cat = 'Mis ejercicios') {
+  const clean = name.trim();
+  if (!clean) return { ok: false, error: 'Escribe un nombre' };
+  if (customExerciseExists(clean)) return { ok: false, error: 'Ese ejercicio ya existe' };
+
+  state.customExercises.push({
+    id: createId('cust'),
+    name: clean,
+    cat,
+  });
+
+  const ok = persist();
+  return ok ? { ok: true } : { ok: false, error: 'No se pudo guardar' };
+}
+
+export function addLibraryExerciseToDraft(name) {
+  const exercise = createExercise(name);
+  state.draftRoutine.exercises.push(exercise);
 }
 
 export function startNewRoutineDraft() {
@@ -101,7 +162,6 @@ export function addDraftExercise() {
 
 export function removeDraftExercise(exerciseId) {
   state.draftRoutine.exercises = state.draftRoutine.exercises.filter(ex => ex.id !== exerciseId);
-
   if (state.draftRoutine.exercises.length === 0) {
     state.draftRoutine.exercises.push(createExercise());
   }
@@ -133,7 +193,6 @@ export function removeSetFromExercise(exerciseId, setIndex) {
   if (!exercise) return;
 
   exercise.sets.splice(setIndex, 1);
-
   if (exercise.sets.length === 0) {
     exercise.sets.push(createSet());
   }
@@ -152,18 +211,14 @@ export function updateSet(exerciseId, setIndex, field, value) {
 export function saveDraftRoutine() {
   const name = state.draftRoutine.name.trim();
 
-  if (!name) {
-    return { ok: false, error: 'Ponle nombre a la rutina' };
-  }
+  if (!name) return { ok: false, error: 'Ponle nombre a la rutina' };
 
   const duplicated = Object.values(state.routines).some(routine => {
     if (state.editingRoutineId && routine.id === state.editingRoutineId) return false;
     return routine.name.trim().toLowerCase() === name.toLowerCase();
   });
 
-  if (duplicated) {
-    return { ok: false, error: 'Ya existe una rutina con ese nombre' };
-  }
+  if (duplicated) return { ok: false, error: 'Ya existe una rutina con ese nombre' };
 
   const routineToSave = structuredClone(state.draftRoutine);
   routineToSave.name = name;
@@ -219,6 +274,35 @@ export function toggleActiveSetDone(exerciseId, setIndex, checked) {
   exercise.sets[setIndex].done = checked;
 }
 
+export function startRestTimer(seconds) {
+  state.restTimer.active = true;
+  state.restTimer.total = seconds;
+  state.restTimer.remaining = seconds;
+}
+
+export function tickRestTimer() {
+  if (!state.restTimer.active) return;
+  state.restTimer.remaining = Math.max(0, state.restTimer.remaining - 1);
+  if (state.restTimer.remaining === 0) {
+    stopRestTimer();
+  }
+}
+
+export function adjustRestTimer(delta) {
+  if (!state.restTimer.active) return;
+  state.restTimer.remaining = Math.max(0, state.restTimer.remaining + delta);
+  state.restTimer.total = Math.max(state.restTimer.remaining, 1);
+  if (state.restTimer.remaining === 0) {
+    stopRestTimer();
+  }
+}
+
+export function stopRestTimer() {
+  state.restTimer.active = false;
+  state.restTimer.total = 0;
+  state.restTimer.remaining = 0;
+}
+
 export function finishSession(durationSec) {
   if (!state.activeSession) return { ok: false };
 
@@ -248,6 +332,7 @@ export function finishSession(durationSec) {
   });
 
   state.activeSession = null;
+  stopRestTimer();
   const ok = persist();
   return { ok, completedSets, volume };
 }
@@ -272,8 +357,12 @@ export function getStats() {
 export function resetAllData() {
   state.routines = {};
   state.logs = [];
+  state.customExercises = [];
   state.activeSession = null;
   state.editingRoutineId = null;
   state.draftRoutine = createRoutine();
+  state.libraryCategory = 'Todos';
+  state.libraryQuery = '';
+  stopRestTimer();
   return clearAppData();
 }

@@ -155,7 +155,7 @@ body {
   border-color: var(--primary); background: #1f1f22; box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-/* Checkboxes personalizados (Estilo Toggle moderno) */
+/* Checkboxes personalizados */
 input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
   width: 26px; height: 26px;
@@ -222,34 +222,30 @@ input[type="checkbox"]:checked::after {
 .modal { 
   position: fixed; inset: 0; z-index: 999; 
   background: transparent; 
-  display: flex; align-items: center; justify-content: center; padding: 20px; 
-}
-.modal:not(.hidden) { animation: fadeBg 0.3s ease forwards; }
-
-.modal-card, .modal-sheet { opacity: 0; }
-.modal:not(.hidden) .modal-card, 
-.modal:not(.hidden) .modal-sheet { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-.modal-card { width: 100%; max-width: 340px; padding: 32px 24px; text-align: center; }
-
-/* =========================================
-   CORRECCIÓN DEFINITIVA SCROLL BIBLIOTECA
-   ========================================= */
-.modal { 
-  position: fixed; inset: 0; z-index: 999; 
-  background: transparent; 
   display: flex; align-items: flex-end; /* Alineamos abajo para móviles */
   justify-content: center; padding: 0; 
 }
+.modal:not(.hidden) { animation: fadeBg 0.3s ease forwards; }
 
+.modal-card { 
+  width: 100%; max-width: 340px; padding: 32px 24px; text-align: center;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-xl); 
+  margin: auto; /* Centrar modals de confirmación en pantalla */
+  opacity: 0;
+}
+
+.modal:not(.hidden) .modal-card, 
+.modal:not(.hidden) .modal-sheet { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* CORRECCIÓN SCROLL BIBLIOTECA */
 .modal-sheet { 
   width: 100%; 
   max-width: 480px; 
-  height: 90vh; /* Altura fija para que el scroll ocurra dentro */
+  height: 90vh; 
   background: var(--bg);
   padding: 0; 
-  overflow: hidden; /* Ocultamos el scroll general */
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0; /* Bordes solo arriba */
+  overflow: hidden; 
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0; 
   display: flex;
   flex-direction: column;
 }
@@ -259,10 +255,9 @@ input[type="checkbox"]:checked::after {
   padding: 24px 24px 16px; 
   z-index: 10; 
   border-bottom: 1px solid var(--border); 
-  flex-shrink: 0; /* Evita que la cabecera se encoja */
+  flex-shrink: 0; 
 }
 
-/* El contenedor del buscador y chips */
 #library-search, #library-cats {
   margin-left: 24px;
   margin-right: 24px;
@@ -270,12 +265,29 @@ input[type="checkbox"]:checked::after {
   flex-shrink: 0;
 }
 
-/* ESTE ES EL CONTENEDOR QUE DEBE HACER SCROLL */
 #library-list, #exercise-detail-history {
-  padding: 0 24px 80px 24px; /* Padding extra abajo */
-  overflow-y: auto; /* Aquí ocurre el scroll */
-  -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
-  flex-grow: 1; /* Ocupa el resto del espacio */
+  padding: 0 24px 80px 24px; 
+  overflow-y: auto; 
+  -webkit-overflow-scrolling: touch; 
+  flex-grow: 1; 
+}
+
+.modal-icon { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; }
+.modal-icon svg { width: 32px; height: 32px; }
+.modal-icon.blue { background: var(--primary-glow); color: var(--primary); }
+.modal-icon.green { background: var(--success-bg); color: var(--success); }
+
+.modal-card h3 { margin: 0 0 10px; text-transform: uppercase; font-size: 1.2rem; letter-spacing: -0.02em; }
+.modal-card p { margin: 0 0 24px; color: var(--muted); font-size: 13px; font-weight: 600; line-height: 1.5; }
+.modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.toast { 
+  position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 1000; 
+  background: var(--text); color: var(--bg);
+  padding: 14px 24px; border-radius: 99px; 
+  font-size: 13px; font-weight: 800; text-transform: uppercase; 
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* =========================================
@@ -306,7 +318,7 @@ input[type="checkbox"]:checked::after {
 .pr-item span:last-child { color: var(--success); font-weight: 800; background: var(--success-bg); padding: 4px 10px; border-radius: 8px; }
 
 /* =========================================
-   10. VARIOS Y REST BAR (CORREGIDO Y CENTRADO)
+   10. VARIOS Y REST BAR (CENTRADO Y AJUSTADO)
    ========================================= */
 .timer-pill { background: var(--primary-glow); color: var(--primary); padding: 8px 16px; border-radius: 999px; font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; }
 
@@ -319,22 +331,21 @@ input[type="checkbox"]:checked::after {
 
 .custom-box { background: #131316; border: 1px solid var(--primary); border-radius: var(--radius-lg); padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; box-shadow: 0 4px 16px var(--primary-glow); }
 
-/* CORRECCIÓN: BARRA DE DESCANSO ABAJO Y CENTRADA */
-.rest-bar { 
-  position: fixed; 
-  left: 50%; 
-  bottom: 85px; /* Justo encima del menú de navegación */
-  transform: translateX(-50%); 
-  width: calc(100% - 32px); 
-  max-width: 448px; 
-  background: rgba(59, 130, 246, 0.95); 
-  border-radius: 24px; 
-  overflow: hidden; 
-  z-index: 1001; 
-  box-shadow: 0 -10px 40px rgba(37, 99, 235, 0.2);
-  backdrop-filter: blur(10px); 
+/* BARRA DE DESCANSO CENTRADA Y OPTIMIZADA */
+.rest-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 110px; /* Separación sobre el menú de navegación */
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 420px;
+  background: rgba(59, 130, 246, 0.96);
+  border-radius: 22px;
+  overflow: hidden;
+  z-index: 1001;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.28);
+  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .rest-top-line { height: 4px; background: rgba(0, 0, 0, 0.2); }
@@ -357,7 +368,13 @@ input[type="checkbox"]:checked::after {
 
 @media (max-width: 420px) {
   body { padding-left: 12px; padding-right: 12px; }
-  .rest-content { flex-direction: row; justify-content: space-between; }
+  
+  .rest-bar {
+    width: calc(100% - 24px);
+    bottom: 104px;
+  }
+
+  .rest-content { flex-direction: row; align-items: center; justify-content: space-between; }
   .rest-actions { gap: 4px; }
   .rest-actions .btn-secondary, .rest-actions .btn-primary { font-size: 10px; padding: 8px 10px; }
 }

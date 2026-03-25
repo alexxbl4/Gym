@@ -1,5 +1,12 @@
 import { LIBRARY_CATEGORIES } from './constants.js';
-import { getFilteredLibrary, getRoutinesArray, getStats, state } from './state.js';
+import {
+  getExerciseDetail,
+  getExerciseProgressList,
+  getFilteredLibrary,
+  getRoutinesArray,
+  getStats,
+  state,
+} from './state.js';
 
 const els = {
   screenRoutines: document.getElementById('screen-routines'),
@@ -17,6 +24,7 @@ const els = {
   trainExerciseList: document.getElementById('train-exercise-list'),
   statsGrid: document.getElementById('stats-grid'),
   historyList: document.getElementById('history-list'),
+  exerciseProgressList: document.getElementById('exercise-progress-list'),
   bottomNav: document.getElementById('bottom-nav'),
 
   libraryModal: document.getElementById('library-modal'),
@@ -25,6 +33,11 @@ const els = {
   libraryList: document.getElementById('library-list'),
   libraryCustomBox: document.getElementById('library-custom-box'),
   libraryCustomText: document.getElementById('library-custom-text'),
+
+  detailModal: document.getElementById('exercise-detail-modal'),
+  detailTitle: document.getElementById('exercise-detail-title'),
+  detailPrs: document.getElementById('exercise-detail-prs'),
+  detailHistory: document.getElementById('exercise-detail-history'),
 
   restBar: document.getElementById('rest-bar'),
   restTime: document.getElementById('rest-time'),
@@ -103,6 +116,56 @@ export function openLibraryModal() {
 
 export function closeLibraryModal() {
   els.libraryModal.classList.add('hidden');
+}
+
+export function openExerciseDetailModal(name) {
+  const detail = getExerciseDetail(name);
+  els.detailTitle.textContent = name;
+  els.detailPrs.innerHTML = `
+    <div class="stat-card">
+      <p class="stat-value">${Math.round(detail.prs.bestWeight)}</p>
+      <p class="stat-label">Mejor peso</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-value">${Math.round(detail.prs.bestVolume)}</p>
+      <p class="stat-label">Mejor volumen</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-value">${Math.round(detail.prs.bestEstimated1RM)}</p>
+      <p class="stat-label">1RM estimado</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-value">${detail.prs.sessions}</p>
+      <p class="stat-label">Sesiones</p>
+    </div>
+  `;
+
+  els.detailHistory.innerHTML = '';
+
+  if (detail.history.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-box';
+    empty.textContent = 'Aún no hay historial para este ejercicio.';
+    els.detailHistory.appendChild(empty);
+  } else {
+    detail.history.forEach(item => {
+      const article = document.createElement('article');
+      article.className = 'history-item';
+      article.innerHTML = `
+        <h4>${formatDate(item.date)} · ${item.routineName}</h4>
+        <p>${item.completedSets} series · ${Math.round(item.volume)} kg volumen · ${Math.round(item.bestWeight)} kg top set · 1RM ${Math.round(item.bestEstimated1RM)}</p>
+        <p>${item.sets.map(setItem => `${setItem.weight}×${setItem.reps}`).join(' · ')}</p>
+      `;
+      els.detailHistory.appendChild(article);
+    });
+  }
+
+  els.detailModal.classList.remove('hidden');
+  initIcons();
+}
+
+export function closeExerciseDetailModal() {
+  els.detailModal.classList.add('hidden');
 }
 
 export function renderLibrary() {
@@ -266,6 +329,27 @@ export function renderStats() {
       <p class="stat-label">Minutos</p>
     </div>
   `;
+
+  const exerciseProgress = getExerciseProgressList();
+  els.exerciseProgressList.innerHTML = '';
+
+  if (exerciseProgress.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-box';
+    empty.textContent = 'Completa entrenamientos para ver progreso por ejercicio.';
+    els.exerciseProgressList.appendChild(empty);
+  } else {
+    exerciseProgress.forEach(item => {
+      const article = document.createElement('article');
+      article.className = 'history-item';
+      article.dataset.exerciseName = item.name;
+      article.innerHTML = `
+        <h4>${item.name}</h4>
+        <p>${item.sessions} sesiones · Top ${Math.round(item.bestWeight)} kg · Volumen ${Math.round(item.bestVolume)} kg · 1RM ${Math.round(item.bestEstimated1RM)}</p>
+      `;
+      els.exerciseProgressList.appendChild(article);
+    });
+  }
 
   els.historyList.innerHTML = '';
 

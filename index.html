@@ -35,6 +35,56 @@
     </div>
   </div>
 
+  <div id="library-modal" class="modal hidden">
+    <div class="modal-sheet">
+      <div class="section-head modal-sheet-head">
+        <div>
+          <p class="eyebrow">Biblioteca</p>
+          <h2 class="section-title">Ejercicios</h2>
+        </div>
+        <button id="close-library-btn" class="icon-btn" aria-label="Cerrar biblioteca">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <input
+        id="library-search"
+        class="input-main"
+        type="text"
+        placeholder="Buscar ejercicio..."
+      />
+
+      <div id="library-cats" class="chips"></div>
+
+      <div id="library-custom-box" class="custom-box hidden">
+        <div>
+          <p class="eyebrow">Nuevo ejercicio</p>
+          <p id="library-custom-text" class="setting-text"></p>
+        </div>
+        <button id="save-custom-ex-btn" class="btn btn-primary small">Guardar</button>
+      </div>
+
+      <div id="library-list" class="stack"></div>
+    </div>
+  </div>
+
+  <div id="rest-bar" class="rest-bar hidden">
+    <div class="rest-top-line">
+      <div id="rest-progress" class="rest-progress"></div>
+    </div>
+    <div class="rest-content">
+      <div>
+        <p class="eyebrow rest-eyebrow">Descanso</p>
+        <h3 id="rest-time" class="rest-time">01:30</h3>
+      </div>
+      <div class="rest-actions">
+        <button id="rest-minus-btn" class="btn btn-secondary small">-15</button>
+        <button id="rest-plus-btn" class="btn btn-secondary small">+15</button>
+        <button id="rest-skip-btn" class="btn btn-primary small">Saltar</button>
+      </div>
+    </div>
+  </div>
+
   <main id="screen-routines" class="screen">
     <header class="page-header">
       <h1>MOON<span>PRO</span></h1>
@@ -62,8 +112,9 @@
 
     <div id="exercise-list" class="stack"></div>
 
-    <div class="editor-actions">
+    <div class="editor-actions stack">
       <button id="add-exercise-btn" class="btn btn-secondary">+ Añadir ejercicio</button>
+      <button id="open-library-btn" class="btn btn-ghost">📚 Añadir desde biblioteca</button>
     </div>
   </section>
 
@@ -226,6 +277,16 @@
         <input class="train-set-done" type="checkbox" />
       </label>
     </div>
+  </template>
+
+  <template id="library-item-template">
+    <article class="card library-item">
+      <div>
+        <p class="eyebrow library-cat"></p>
+        <h3 class="routine-name library-name"></h3>
+      </div>
+      <button class="btn btn-primary small action-library-add">Añadir</button>
+    </article>
   </template>
 
   <script type="module" src="./js/app.js"></script>

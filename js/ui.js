@@ -140,7 +140,13 @@ export function openExerciseDetailModal(name) {
     </div>
   `;
 
-  els.detailHistory.innerHTML = '';
+  const chartHtml = renderMiniChart(detail.chartPoints);
+  els.detailHistory.innerHTML = `
+    <div class="panel" style="padding:16px;">
+      <p class="eyebrow">Gráfica</p>
+      ${chartHtml}
+    </div>
+  `;
 
   if (detail.history.length === 0) {
     const empty = document.createElement('div');
@@ -166,6 +172,32 @@ export function openExerciseDetailModal(name) {
 
 export function closeExerciseDetailModal() {
   els.detailModal.classList.add('hidden');
+}
+
+function renderMiniChart(points) {
+  if (!points.length) {
+    return `<div class="empty-box">Aún no hay suficientes datos.</div>`;
+  }
+
+  const max = Math.max(...points.map(p => p.bestWeight), 1);
+
+  const bars = points
+    .map(
+      p => `
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:8px;">
+        <div title="${p.bestWeight} kg" style="width:100%; max-width:26px; height:${Math.max((p.bestWeight / max) * 120, 10)}px; background:linear-gradient(180deg,#60a5fa,#2563eb); border-radius:10px 10px 4px 4px;"></div>
+        <span style="font-size:10px; color:#71717a; font-weight:800;">${p.label}</span>
+      </div>
+    `
+    )
+    .join('');
+
+  return `
+    <div style="display:flex; align-items:flex-end; gap:8px; min-height:150px; padding-top:8px;">
+      ${bars}
+    </div>
+    <p style="margin:10px 0 0; color:#71717a; font-size:11px; font-weight:700;">Top set por sesión (kg)</p>
+  `;
 }
 
 export function renderLibrary() {

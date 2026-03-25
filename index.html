@@ -188,6 +188,10 @@
           <p class="setting-text">Tus datos se guardan en este navegador.</p>
         </div>
       </div>
+
+      <button id="export-backup-btn" class="btn btn-secondary">Exportar backup</button>
+      <label class="btn btn-secondary" for="import-backup-input">Importar backup</label>
+      <input id="import-backup-input" type="file" accept="application/json,.json" class="hidden" />
       <button id="reset-app-btn" class="btn btn-danger">Borrar todos los datos</button>
     </section>
   </section>
@@ -221,6 +225,7 @@
       <div class="card-actions">
         <button class="btn btn-secondary small action-train">Entrenar</button>
         <button class="btn btn-secondary small action-edit">Editar</button>
+        <button class="btn btn-secondary small action-duplicate">Duplicar</button>
         <button class="btn btn-danger small action-delete">Borrar</button>
       </div>
     </article>
@@ -230,9 +235,17 @@
     <article class="card exercise-card">
       <div class="exercise-top">
         <input class="exercise-name input-inline" type="text" placeholder="Nombre del ejercicio" />
-        <button class="icon-btn action-remove-exercise" aria-label="Eliminar ejercicio">
-          <i data-lucide="trash-2"></i>
-        </button>
+        <div class="exercise-order-actions">
+          <button class="icon-btn action-move-up" aria-label="Subir ejercicio">
+            <i data-lucide="arrow-up"></i>
+          </button>
+          <button class="icon-btn action-move-down" aria-label="Bajar ejercicio">
+            <i data-lucide="arrow-down"></i>
+          </button>
+          <button class="icon-btn action-remove-exercise" aria-label="Eliminar ejercicio">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
       </div>
 
       <div class="exercise-config">

@@ -59,6 +59,7 @@ function normalizeLog(log, index) {
     durationSec: Number(log?.durationSec || 0),
     completedSets: Number(log?.completedSets || 0),
     volume: Number(log?.volume || 0),
+    exercises: Array.isArray(log?.exercises) ? log.exercises : [],
   };
 }
 
@@ -70,25 +71,12 @@ function normalizeCustomExercise(item, index) {
   };
 }
 
-function migrateData(rawData) {
+export function normalizeImportedData(rawData) {
   if (!rawData || typeof rawData !== 'object') {
     return createEmptyAppData();
   }
 
-  if (rawData._schemaVersion === APP_SCHEMA_VERSION) {
-    return {
-      _schemaVersion: APP_SCHEMA_VERSION,
-      routines: Object.fromEntries(
-        Object.entries(rawData.routines || {}).map(([key, routine]) => [key, normalizeRoutine(routine, key)])
-      ),
-      logs: Array.isArray(rawData.logs) ? rawData.logs.map(normalizeLog) : [],
-      customExercises: Array.isArray(rawData.customExercises)
-        ? rawData.customExercises.map(normalizeCustomExercise)
-        : [],
-    };
-  }
-
-  if (rawData.routines || rawData.logs) {
+  if (rawData._schemaVersion || rawData.routines || rawData.logs || rawData.customExercises) {
     return {
       _schemaVersion: APP_SCHEMA_VERSION,
       routines: Object.fromEntries(
@@ -120,7 +108,7 @@ export function loadAppData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.app);
     const parsed = raw ? JSON.parse(raw) : createEmptyAppData();
-    const migrated = migrateData(parsed);
+    const migrated = normalizeImportedData(parsed);
     saveAppData(migrated);
     return migrated;
   } catch {
@@ -148,4 +136,13 @@ export function clearAppData() {
   } catch {
     return false;
   }
+}
+
+export function exportAppData() {
+  const data = loadAppData();
+  return {
+    exportedAt: new Date().toISOString(),
+    app: 'MoonPro',
+    data,
+  };
 }

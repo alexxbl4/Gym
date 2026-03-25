@@ -35,6 +35,39 @@
     </div>
   </div>
 
+  <div id="summary-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-icon green">
+        <i data-lucide="check-circle-2"></i>
+      </div>
+      <h3 id="summary-title">¡Entrenamiento completado!</h3>
+      <p id="summary-routine" class="eyebrow" style="margin-bottom:16px;"></p>
+      
+      <div class="stats-grid" style="margin-bottom: 16px;">
+        <div class="stat-card" style="padding:10px;">
+          <p id="summary-time" class="stat-value" style="font-size:1.1rem;">00:00</p>
+          <p class="stat-label">Tiempo</p>
+        </div>
+        <div class="stat-card" style="padding:10px;">
+          <p id="summary-volume" class="stat-value" style="font-size:1.1rem;">0</p>
+          <p class="stat-label">KG Total</p>
+        </div>
+        <div class="stat-card" style="padding:10px;">
+          <p id="summary-sets" class="stat-value" style="font-size:1.1rem;">0</p>
+          <p class="stat-label">Series</p>
+        </div>
+        <div class="stat-card" style="padding:10px;">
+          <p id="summary-prs" class="stat-value" style="font-size:1.1rem; color: #16a34a;">0</p>
+          <p class="stat-label">Nuevos PRs</p>
+        </div>
+      </div>
+      
+      <div id="summary-pr-list" class="stack-sm" style="margin-bottom:20px; text-align:left;"></div>
+
+      <button id="close-summary-btn" class="btn btn-primary" style="width:100%;">Cerrar</button>
+    </div>
+  </div>
+
   <div id="library-modal" class="modal hidden">
     <div class="modal-sheet">
       <div class="section-head modal-sheet-head">
@@ -47,13 +80,7 @@
         </button>
       </div>
 
-      <input
-        id="library-search"
-        class="input-main"
-        type="text"
-        placeholder="Buscar ejercicio..."
-      />
-
+      <input id="library-search" class="input-main" type="text" placeholder="Buscar ejercicio..." />
       <div id="library-cats" class="chips"></div>
 
       <div id="library-custom-box" class="custom-box hidden">
@@ -79,7 +106,6 @@
           <i data-lucide="x"></i>
         </button>
       </div>
-
       <div id="exercise-detail-prs" class="stats-grid"></div>
       <div id="exercise-detail-history" class="stack"></div>
     </div>
@@ -162,6 +188,27 @@
     </header>
 
     <section class="panel">
+      <div class="section-head">
+        <h2 class="section-title">Calendario</h2>
+        <div class="calendar-nav">
+          <button id="cal-prev" class="icon-btn small"><i data-lucide="chevron-left"></i></button>
+          <span id="cal-month" class="setting-text" style="text-transform: capitalize;"></span>
+          <button id="cal-next" class="icon-btn small"><i data-lucide="chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="calendar-grid">
+        <div class="cal-day-head">L</div><div class="cal-day-head">M</div><div class="cal-day-head">X</div>
+        <div class="cal-day-head">J</div><div class="cal-day-head">V</div><div class="cal-day-head">S</div><div class="cal-day-head">D</div>
+      </div>
+      <div id="calendar-days" class="calendar-grid"></div>
+      
+      <div id="calendar-day-detail" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+        <p id="cal-detail-date" class="eyebrow"></p>
+        <div id="cal-detail-content" class="stack-sm"></div>
+      </div>
+    </section>
+
+    <section class="panel">
       <div id="stats-grid" class="stats-grid"></div>
     </section>
 
@@ -171,7 +218,7 @@
     </section>
 
     <section class="panel">
-      <h2 class="section-title">Historial</h2>
+      <h2 class="section-title">Últimas sesiones</h2>
       <div id="history-list" class="stack"></div>
     </section>
   </section>
@@ -188,9 +235,8 @@
           <p class="setting-text">Tus datos se guardan en este navegador.</p>
         </div>
       </div>
-
       <button id="export-backup-btn" class="btn btn-secondary">Exportar backup</button>
-      <label class="btn btn-secondary" for="import-backup-input">Importar backup</label>
+      <label class="btn btn-secondary" style="text-align: center;" for="import-backup-input">Importar backup</label>
       <input id="import-backup-input" type="file" accept="application/json,.json" class="hidden" />
       <button id="reset-app-btn" class="btn btn-danger">Borrar todos los datos</button>
     </section>
@@ -198,23 +244,20 @@
 
   <nav class="bottom-nav" id="bottom-nav">
     <button class="nav-item nav-active" data-screen="routines">
-      <i data-lucide="dumbbell"></i>
-      <span>Rutinas</span>
+      <i data-lucide="dumbbell"></i><span>Rutinas</span>
     </button>
     <button class="nav-item" data-screen="train">
-      <i data-lucide="play-circle"></i>
-      <span>Entrenar</span>
+      <i data-lucide="play-circle"></i><span>Entrenar</span>
     </button>
     <button class="nav-item" data-screen="stats">
-      <i data-lucide="bar-chart-3"></i>
-      <span>Estadísticas</span>
+      <i data-lucide="bar-chart-3"></i><span>Estadísticas</span>
     </button>
     <button class="nav-item" data-screen="settings">
-      <i data-lucide="settings"></i>
-      <span>Ajustes</span>
+      <i data-lucide="settings"></i><span>Ajustes</span>
     </button>
   </nav>
 
+  <!-- Templates (Mismos que antes) -->
   <template id="routine-card-template">
     <article class="card routine-card">
       <div>
@@ -236,39 +279,17 @@
       <div class="exercise-top">
         <input class="exercise-name input-inline" type="text" placeholder="Nombre del ejercicio" />
         <div class="exercise-order-actions">
-          <button class="icon-btn action-move-up" aria-label="Subir ejercicio">
-            <i data-lucide="arrow-up"></i>
-          </button>
-          <button class="icon-btn action-move-down" aria-label="Bajar ejercicio">
-            <i data-lucide="arrow-down"></i>
-          </button>
-          <button class="icon-btn action-remove-exercise" aria-label="Eliminar ejercicio">
-            <i data-lucide="trash-2"></i>
-          </button>
+          <button class="icon-btn action-move-up" aria-label="Subir ejercicio"><i data-lucide="arrow-up"></i></button>
+          <button class="icon-btn action-move-down" aria-label="Bajar ejercicio"><i data-lucide="arrow-down"></i></button>
+          <button class="icon-btn action-remove-exercise" aria-label="Eliminar ejercicio"><i data-lucide="trash-2"></i></button>
         </div>
       </div>
-
       <div class="exercise-config">
-        <label>
-          <span>Descanso</span>
-          <input class="exercise-rest input-mini" type="number" min="0" step="5" value="90" />
-        </label>
-
-        <label class="toggle-wrap">
-          <span>Cardio</span>
-          <input class="exercise-cardio" type="checkbox" />
-        </label>
+        <label><span>Descanso</span><input class="exercise-rest input-mini" type="number" min="0" step="5" value="90" /></label>
+        <label class="toggle-wrap"><span>Cardio</span><input class="exercise-cardio" type="checkbox" /></label>
       </div>
-
-      <div class="sets-head">
-        <span>#</span>
-        <span class="grow">KG / KM</span>
-        <span class="grow">REPS / MIN</span>
-        <span></span>
-      </div>
-
+      <div class="sets-head"><span>#</span><span class="grow">KG / KM</span><span class="grow">REPS / MIN</span><span></span></div>
       <div class="sets-list stack-sm"></div>
-
       <button class="btn btn-ghost small action-add-set">+ Añadir serie</button>
     </article>
   </template>
@@ -278,9 +299,7 @@
       <span class="set-index"></span>
       <input class="set-weight input-mini grow" type="number" step="any" placeholder="0" />
       <input class="set-reps input-mini grow" type="number" step="any" placeholder="0" />
-      <button class="icon-btn action-remove-set" aria-label="Eliminar serie">
-        <i data-lucide="minus"></i>
-      </button>
+      <button class="icon-btn action-remove-set" aria-label="Eliminar serie"><i data-lucide="minus"></i></button>
     </div>
   </template>
 
@@ -293,12 +312,7 @@
         </div>
         <div class="train-rest"></div>
       </div>
-      <div class="sets-head">
-        <span>#</span>
-        <span class="grow">KG / KM</span>
-        <span class="grow">REPS / MIN</span>
-        <span>OK</span>
-      </div>
+      <div class="sets-head"><span>#</span><span class="grow">KG / KM</span><span class="grow">REPS / MIN</span><span>OK</span></div>
       <div class="train-sets-list stack-sm"></div>
     </article>
   </template>
@@ -308,9 +322,7 @@
       <span class="set-index"></span>
       <input class="train-set-weight input-mini grow" type="number" step="any" placeholder="0" />
       <input class="train-set-reps input-mini grow" type="number" step="any" placeholder="0" />
-      <label class="check-wrap">
-        <input class="train-set-done" type="checkbox" />
-      </label>
+      <label class="check-wrap"><input class="train-set-done" type="checkbox" /></label>
     </div>
   </template>
 

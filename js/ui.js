@@ -1,4 +1,5 @@
-import { getRoutinesArray, getStats, state } from './state.js';
+import { LIBRARY_CATEGORIES } from './constants.js';
+import { getFilteredLibrary, getRoutinesArray, getStats, state } from './state.js';
 
 const els = {
   screenRoutines: document.getElementById('screen-routines'),
@@ -18,6 +19,17 @@ const els = {
   historyList: document.getElementById('history-list'),
   bottomNav: document.getElementById('bottom-nav'),
 
+  libraryModal: document.getElementById('library-modal'),
+  librarySearch: document.getElementById('library-search'),
+  libraryCats: document.getElementById('library-cats'),
+  libraryList: document.getElementById('library-list'),
+  libraryCustomBox: document.getElementById('library-custom-box'),
+  libraryCustomText: document.getElementById('library-custom-text'),
+
+  restBar: document.getElementById('rest-bar'),
+  restTime: document.getElementById('rest-time'),
+  restProgress: document.getElementById('rest-progress'),
+
   toast: document.getElementById('toast'),
   toastMsg: document.getElementById('toast-msg'),
   modal: document.getElementById('modal-confirm'),
@@ -31,6 +43,7 @@ const els = {
   tplSetRow: document.getElementById('set-row-template'),
   tplTrainCard: document.getElementById('train-card-template'),
   tplTrainSetRow: document.getElementById('train-set-row-template'),
+  tplLibraryItem: document.getElementById('library-item-template'),
 };
 
 let toastTimer = null;
@@ -82,6 +95,56 @@ export function bindConfirmEvents() {
     if (typeof confirmHandler === 'function') confirmHandler();
     closeConfirm();
   });
+}
+
+export function openLibraryModal() {
+  els.libraryModal.classList.remove('hidden');
+}
+
+export function closeLibraryModal() {
+  els.libraryModal.classList.add('hidden');
+}
+
+export function renderLibrary() {
+  els.librarySearch.value = state.libraryQuery;
+  els.libraryCats.innerHTML = '';
+
+  LIBRARY_CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = `chip ${state.libraryCategory === cat ? 'active' : ''}`;
+    btn.dataset.cat = cat;
+    btn.textContent = cat;
+    els.libraryCats.appendChild(btn);
+  });
+
+  const list = getFilteredLibrary();
+  els.libraryList.innerHTML = '';
+
+  list.forEach(item => {
+    const node = els.tplLibraryItem.content.firstElementChild.cloneNode(true);
+    node.dataset.name = item.name;
+    node.querySelector('.library-cat').textContent = item.cat;
+    node.querySelector('.library-name').textContent = item.name;
+    els.libraryList.appendChild(node);
+  });
+
+  const query = state.libraryQuery.trim();
+  const exactMatch = list.some(item => item.name.toLowerCase() === query.toLowerCase());
+  const canSuggest = query.length > 2 && !exactMatch;
+
+  els.libraryCustomBox.classList.toggle('hidden', !canSuggest);
+  els.libraryCustomText.textContent = canSuggest
+    ? `Guardar "${query}" en Mis ejercicios`
+    : '';
+
+  if (list.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-box';
+    empty.textContent = 'No hay ejercicios para ese filtro.';
+    els.libraryList.appendChild(empty);
+  }
+
+  initIcons();
 }
 
 export function renderRoutines() {
@@ -171,6 +234,9 @@ export function renderTrainScreen() {
       row.querySelector('.train-set-weight').value = setItem.weight;
       row.querySelector('.train-set-reps').value = setItem.reps;
       row.querySelector('.train-set-done').checked = Boolean(setItem.done);
+
+      if (setItem.done) row.classList.add('done');
+
       list.appendChild(row);
     });
 
@@ -224,6 +290,20 @@ export function renderStats() {
 
 export function updateTrainTimer(seconds) {
   els.trainTimer.textContent = formatDuration(seconds);
+}
+
+export function renderRestTimer() {
+  const timer = state.restTimer;
+
+  if (!timer.active) {
+    els.restBar.classList.add('hidden');
+    return;
+  }
+
+  els.restBar.classList.remove('hidden');
+  els.restTime.textContent = formatDuration(timer.remaining);
+  const width = timer.total > 0 ? (timer.remaining / timer.total) * 100 : 0;
+  els.restProgress.style.width = `${width}%`;
 }
 
 function formatDuration(totalSec = 0) {

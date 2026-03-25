@@ -12,38 +12,54 @@ import {
   updateSet,
   saveDraftRoutine,
   deleteRoutine,
+  startSession,
+  updateActiveSet,
+  toggleActiveSetDone,
+  finishSession,
+  resetAllData,
 } from './state.js';
 
 import {
   showScreen,
   renderRoutines,
   renderEditor,
+  renderTrainScreen,
+  renderStats,
   showToast,
   showConfirm,
-  closeConfirm,
   bindConfirmEvents,
   initIcons,
+  updateTrainTimer,
 } from './ui.js';
 
 const routineNameInput = document.getElementById('routine-name');
 const newRoutineBtn = document.getElementById('new-routine-btn');
-const backMainBtn = document.getElementById('back-main-btn');
+const backRoutinesBtn = document.getElementById('back-routines-btn');
 const saveRoutineBtn = document.getElementById('save-routine-btn');
 const addExerciseBtn = document.getElementById('add-exercise-btn');
 const routineList = document.getElementById('routine-list');
 const exerciseList = document.getElementById('exercise-list');
+const trainExerciseList = document.getElementById('train-exercise-list');
+const bottomNav = document.getElementById('bottom-nav');
+const finishSessionBtn = document.getElementById('finish-session-btn');
+const resetAppBtn = document.getElementById('reset-app-btn');
 
-function openMain() {
-  setScreen('main');
-  showScreen('main');
-  renderRoutines();
+let sessionInterval = null;
+let sessionSeconds = 0;
+
+function openScreen(name) {
+  setScreen(name);
+  showScreen(name);
+
+  if (name === 'routines') renderRoutines();
+  if (name === 'editor') renderEditor();
+  if (name === 'train') renderTrainScreen();
+  if (name === 'stats') renderStats();
 }
 
 function openEditorForNew() {
   startNewRoutineDraft();
-  setScreen('editor');
-  showScreen('editor');
-  renderEditor();
+  openScreen('editor');
 }
 
 function openEditorForEdit(id) {
@@ -53,9 +69,7 @@ function openEditorForEdit(id) {
     return;
   }
 
-  setScreen('editor');
-  showScreen('editor');
-  renderEditor();
+  openScreen('editor');
 }
 
 function handleSaveRoutine() {
@@ -67,14 +81,60 @@ function handleSaveRoutine() {
   }
 
   showToast('✅ Rutina guardada');
-  openMain();
+  openScreen('routines');
+}
+
+function handleStartSession(routineId) {
+  const result = startSession(routineId);
+
+  if (!result.ok) {
+    showToast(`⚠️ ${result.error}`);
+    return;
+  }
+
+  clearInterval(sessionInterval);
+  sessionSeconds = 0;
+  updateTrainTimer(sessionSeconds);
+  sessionInterval = setInterval(() => {
+    sessionSeconds += 1;
+    updateTrainTimer(sessionSeconds);
+  }, 1000);
+
+  renderTrainScreen();
+  openScreen('train');
+  showToast('💪 Entrenamiento iniciado');
+}
+
+function handleFinishSession() {
+  if (!state.activeSession) {
+    showToast('No hay sesión activa');
+    return;
+  }
+
+  showConfirm({
+    title: 'Finalizar sesión',
+    body: 'Se guardará en tu historial.',
+    onConfirm: () => {
+      clearInterval(sessionInterval);
+      const result = finishSession(sessionSeconds);
+      sessionSeconds = 0;
+      updateTrainTimer(0);
+      renderTrainScreen();
+      renderStats();
+
+      if (result.ok) {
+        showToast(`✅ Guardado · ${result.completedSets} series`);
+        openScreen('stats');
+      } else {
+        showToast('⚠️ No se pudo guardar la sesión');
+      }
+    },
+  });
 }
 
 function bindTopLevelEvents() {
   newRoutineBtn.addEventListener('click', openEditorForNew);
-
-  backMainBtn.addEventListener('click', openMain);
-
+  backRoutinesBtn.addEventListener('click', () => openScreen('routines'));
   saveRoutineBtn.addEventListener('click', handleSaveRoutine);
 
   addExerciseBtn.addEventListener('click', () => {
@@ -85,6 +145,34 @@ function bindTopLevelEvents() {
   routineNameInput.addEventListener('input', e => {
     updateDraftName(e.target.value);
   });
+
+  finishSessionBtn.addEventListener('click', handleFinishSession);
+
+  resetAppBtn.addEventListener('click', () => {
+    showConfirm({
+      title: 'Borrar datos',
+      body: 'Eliminarás rutinas y estadísticas guardadas en este navegador.',
+      onConfirm: () => {
+        resetAllData();
+        clearInterval(sessionInterval);
+        sessionSeconds = 0;
+        updateTrainTimer(0);
+        renderRoutines();
+        renderTrainScreen();
+        renderStats();
+        openScreen('routines');
+        showToast('🗑️ Datos eliminados');
+      },
+    });
+  });
+}
+
+function bindBottomNav() {
+  bottomNav.addEventListener('click', e => {
+    const btn = e.target.closest('.nav-item');
+    if (!btn) return;
+    openScreen(btn.dataset.screen);
+  });
 }
 
 function bindRoutineListEvents() {
@@ -94,6 +182,11 @@ function bindRoutineListEvents() {
 
     const id = card.dataset.id;
     if (!id) return;
+
+    if (e.target.closest('.action-train')) {
+      handleStartSession(id);
+      return;
+    }
 
     if (e.target.closest('.action-edit')) {
       openEditorForEdit(id);
@@ -108,6 +201,7 @@ function bindRoutineListEvents() {
           const ok = deleteRoutine(id);
           if (ok) {
             renderRoutines();
+            renderStats();
             showToast('🗑️ Rutina eliminada');
           } else {
             showToast('⚠️ No se pudo borrar');
@@ -190,21 +284,56 @@ function bindExerciseListEvents() {
   });
 }
 
+function bindTrainEvents() {
+  trainExerciseList.addEventListener('input', e => {
+    const card = e.target.closest('.train-card');
+    if (!card) return;
+
+    const exerciseId = card.dataset.exerciseId;
+    if (!exerciseId) return;
+
+    const row = e.target.closest('.train-set-row');
+    if (!row) return;
+
+    const setIndex = Number(row.dataset.setIndex);
+
+    if (e.target.matches('.train-set-weight')) {
+      updateActiveSet(exerciseId, setIndex, 'weight', e.target.value);
+    }
+
+    if (e.target.matches('.train-set-reps')) {
+      updateActiveSet(exerciseId, setIndex, 'reps', e.target.value);
+    }
+  });
+
+  trainExerciseList.addEventListener('change', e => {
+    const card = e.target.closest('.train-card');
+    if (!card) return;
+
+    const exerciseId = card.dataset.exerciseId;
+    if (!exerciseId) return;
+
+    const row = e.target.closest('.train-set-row');
+    if (!row) return;
+
+    const setIndex = Number(row.dataset.setIndex);
+
+    if (e.target.matches('.train-set-done')) {
+      toggleActiveSetDone(exerciseId, setIndex, e.target.checked);
+    }
+  });
+}
+
 function init() {
   bindConfirmEvents();
   bindTopLevelEvents();
+  bindBottomNav();
   bindRoutineListEvents();
   bindExerciseListEvents();
+  bindTrainEvents();
   initIcons();
-
-  if (state.screen === 'main') {
-    openMain();
-  } else {
-    showScreen('main');
-    renderRoutines();
-  }
-
-  window.closeConfirm = closeConfirm;
+  updateTrainTimer(0);
+  openScreen('routines');
 }
 
 init();

@@ -121,10 +121,11 @@ function bindEvents() {
 
   els.routineNameInput.addEventListener('input', e => updateDraftName(e.target.value));
   els.finishSessionBtn.addEventListener('click', handleFinishSession);
+  
   els.resetAppBtn.addEventListener('click', () => {
     showConfirm({ title:'Borrar datos', body:'No se puede deshacer.', onConfirm: () => {
       resetAllData(); clearInterval(sessionInterval); stopRestFlow(); openScreen('routines'); showToast('🗑️ Borrado');
-      setTimeout(() => location.reload(), 1000); // Forzamos recarga para que lea constants otra vez
+      setTimeout(() => location.reload(), 1000); 
     }});
   });
 
@@ -181,6 +182,32 @@ function bindEvents() {
 
   els.exerciseProgressList.addEventListener('click', e => {
     const name = e.target.closest('.history-item')?.dataset.exerciseName; if(name) openExerciseDetailModal(name);
+  });
+
+  // ==========================================
+  // EVENTOS DE LA BIBLIOTECA (¡Los que faltaban!)
+  // ==========================================
+  els.librarySearch.addEventListener('input', e => {
+    setLibraryQuery(e.target.value);
+    renderLibrary();
+  });
+
+  els.libraryCats.addEventListener('click', e => {
+    const btn = e.target.closest('.chip');
+    if (!btn) return;
+    setLibraryCategory(btn.dataset.cat);
+    renderLibrary();
+  });
+
+  els.libraryList.addEventListener('click', e => {
+    const card = e.target.closest('.library-item');
+    if (!card) return;
+    if (e.target.closest('.action-library-add')) {
+      addLibraryExerciseToDraft(card.dataset.name);
+      renderEditor();
+      closeLibraryModal();
+      showToast('✅ Ejercicio añadido');
+    }
   });
 }
 

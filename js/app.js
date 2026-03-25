@@ -133,6 +133,21 @@ function handleStartSession(routineId) {
   showToast('💪 Entrenamiento iniciado');
 }
 
+function buildPRMessage(newPRs) {
+  if (!newPRs || newPRs.length === 0) return '';
+
+  const uniqueExercises = [...new Set(newPRs.map(item => item.name))];
+  if (newPRs.length === 1) {
+    return `🏆 Nuevo PR en ${newPRs[0].name}`;
+  }
+
+  if (uniqueExercises.length === 1) {
+    return `🏆 ${newPRs.length} PRs nuevos en ${uniqueExercises[0]}`;
+  }
+
+  return `🏆 ${newPRs.length} PRs nuevos en ${uniqueExercises.length} ejercicios`;
+}
+
 function handleFinishSession() {
   if (!state.activeSession) {
     showToast('No hay sesión activa');
@@ -153,7 +168,12 @@ function handleFinishSession() {
       renderStats();
 
       if (result.ok) {
-        showToast(`✅ Guardado · ${result.completedSets} series`);
+        const prMessage = buildPRMessage(result.newPRs);
+        if (prMessage) {
+          showToast(prMessage, 2600);
+        } else {
+          showToast(`✅ Guardado · ${result.completedSets} series`);
+        }
         openScreen('stats');
       } else {
         showToast('⚠️ No se pudo guardar la sesión');

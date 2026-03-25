@@ -1,4 +1,4 @@
-import { STORAGE_KEYS } from './constants.js';
+import { APP_SCHEMA_VERSION, STORAGE_KEYS } from './constants.js';
 
 function isStorageAvailable() {
   try {
@@ -13,32 +13,113 @@ function isStorageAvailable() {
 
 const storageReady = isStorageAvailable();
 
-export function loadJSON(key, fallbackValue) {
-  if (!storageReady) return fallbackValue;
+function createEmptyAppData() {
+  return {
+    _schemaVersion: APP_SCHEMA_VERSION,
+    routines: {},
+    logs: [],
+  };
+}
+
+function normalizeExercise(exercise, fallbackId) {
+  return {
+    id: exercise?.id || fallbackId,
+    name: exercise?.name || 'Ejercicio',
+    rest: Number(exercise?.rest ?? 90),
+    cardio: Boolean(exercise?.cardio),
+    sets: Array.isArray(exercise?.sets) && exercise.sets.length
+      ? exercise.sets.map(setItem => ({
+          weight: setItem?.weight ?? '',
+          reps: setItem?.reps ?? '',
+        }))
+      : [{ weight: '', reps: '' }],
+  };
+}
+
+function normalizeRoutine(routine, key) {
+  const exercises = Array.isArray(routine?.exercises) ? routine.exercises : [];
+
+  return {
+    id: routine?.id || key,
+    name: routine?.name || 'Rutina',
+    exercises: exercises.map((ex, index) => normalizeExercise(ex, `${key}_ex_${index + 1}`)),
+    createdAt: routine?.createdAt || new Date().toISOString(),
+    updatedAt: routine?.updatedAt || new Date().toISOString(),
+  };
+}
+
+function normalizeLog(log, index) {
+  return {
+    id: log?.id || `log_${index + 1}`,
+    routineId: log?.routineId || '',
+    routineName: log?.routineName || 'Rutina',
+    startedAt: log?.startedAt || new Date().toISOString(),
+    endedAt: log?.endedAt || new Date().toISOString(),
+    durationSec: Number(log?.durationSec || 0),
+    completedSets: Number(log?.completedSets || 0),
+    volume: Number(log?.volume || 0),
+  };
+}
+
+function migrateData(rawData) {
+  if (!rawData || typeof rawData !== 'object') {
+    return createEmptyAppData();
+  }
+
+  if (rawData._schemaVersion === APP_SCHEMA_VERSION && rawData.routines && rawData.logs) {
+    return {
+      _schemaVersion: APP_SCHEMA_VERSION,
+      routines: Object.fromEntries(
+        Object.entries(rawData.routines).map(([key, routine]) => [key, normalizeRoutine(routine, key)])
+      ),
+      logs: rawData.logs.map(normalizeLog),
+    };
+  }
+
+  const maybeOldRoutines = rawData;
+  const routines = Object.fromEntries(
+    Object.entries(maybeOldRoutines).map(([key, routine]) => [key, normalizeRoutine(routine, key)])
+  );
+
+  return {
+    _schemaVersion: APP_SCHEMA_VERSION,
+    routines,
+    logs: [],
+  };
+}
+
+export function loadAppData() {
+  if (!storageReady) return createEmptyAppData();
 
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallbackValue;
+    const raw = localStorage.getItem(STORAGE_KEYS.app);
+    const parsed = raw ? JSON.parse(raw) : createEmptyAppData();
+    const migrated = migrateData(parsed);
+    saveAppData(migrated);
+    return migrated;
   } catch {
-    return fallbackValue;
+    return createEmptyAppData();
   }
 }
 
-export function saveJSON(key, value) {
+export function saveAppData(data) {
   if (!storageReady) return false;
 
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(STORAGE_KEYS.app, JSON.stringify(data));
     return true;
   } catch {
     return false;
   }
 }
 
-export function loadRoutines() {
-  return loadJSON(STORAGE_KEYS.routines, {});
-}
+export function clearAppData() {
+  if (!storageReady) return false;
 
-export function saveRoutines(routines) {
-  return saveJSON(STORAGE_KEYS.routines, routines);
+  try {
+    localStorage.removeItem(STORAGE_KEYS.app);
+    return true;
+  } catch {
+    return false;
+  }
 }

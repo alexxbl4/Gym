@@ -232,33 +232,50 @@ input[type="checkbox"]:checked::after {
 
 .modal-card { width: 100%; max-width: 340px; padding: 32px 24px; text-align: center; }
 
-/* CORRECCIÓN SCROLL BIBLIOTECA */
+/* =========================================
+   CORRECCIÓN DEFINITIVA SCROLL BIBLIOTECA
+   ========================================= */
+.modal { 
+  position: fixed; inset: 0; z-index: 999; 
+  background: transparent; 
+  display: flex; align-items: flex-end; /* Alineamos abajo para móviles */
+  justify-content: center; padding: 0; 
+}
+
 .modal-sheet { 
   width: 100%; 
-  max-width: 440px; 
-  max-height: 85vh; 
-  padding: 24px; 
-  overflow-y: auto; /* Permite hacer scroll */
-  padding-bottom: 60px; /* Margen inferior */
+  max-width: 480px; 
+  height: 90vh; /* Altura fija para que el scroll ocurra dentro */
+  background: var(--bg);
+  padding: 0; 
+  overflow: hidden; /* Ocultamos el scroll general */
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0; /* Bordes solo arriba */
+  display: flex;
+  flex-direction: column;
 }
-.modal-sheet-head { position: sticky; top: -24px; background: var(--panel); padding: 24px 0 16px; margin-top: -24px; z-index: 2; border-bottom: 1px solid var(--border); }
 
-.modal-icon { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; }
-.modal-icon svg { width: 32px; height: 32px; }
-.modal-icon.blue { background: var(--primary-glow); color: var(--primary); }
-.modal-icon.green { background: var(--success-bg); color: var(--success); }
+.modal-sheet-head { 
+  background: var(--bg); 
+  padding: 24px 24px 16px; 
+  z-index: 10; 
+  border-bottom: 1px solid var(--border); 
+  flex-shrink: 0; /* Evita que la cabecera se encoja */
+}
 
-.modal-card h3 { margin: 0 0 10px; text-transform: uppercase; font-size: 1.2rem; letter-spacing: -0.02em; }
-.modal-card p { margin: 0 0 24px; color: var(--muted); font-size: 13px; font-weight: 600; line-height: 1.5; }
-.modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* El contenedor del buscador y chips */
+#library-search, #library-cats {
+  margin-left: 24px;
+  margin-right: 24px;
+  width: calc(100% - 48px);
+  flex-shrink: 0;
+}
 
-.toast { 
-  position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 1000; 
-  background: var(--text); color: var(--bg);
-  padding: 14px 24px; border-radius: 99px; 
-  font-size: 13px; font-weight: 800; text-transform: uppercase; 
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* ESTE ES EL CONTENEDOR QUE DEBE HACER SCROLL */
+#library-list, #exercise-detail-history {
+  padding: 0 24px 80px 24px; /* Padding extra abajo */
+  overflow-y: auto; /* Aquí ocurre el scroll */
+  -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+  flex-grow: 1; /* Ocupa el resto del espacio */
 }
 
 /* =========================================

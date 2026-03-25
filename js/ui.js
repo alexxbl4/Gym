@@ -274,7 +274,7 @@ export function renderEditor() {
   els.routineName.value = draft.name;
   els.exerciseList.innerHTML = '';
 
-  draft.exercises.forEach(exercise => {
+  draft.exercises.forEach((exercise, index) => {
     const card = els.tplExercise.content.firstElementChild.cloneNode(true);
     card.dataset.exerciseId = exercise.id;
 
@@ -282,12 +282,18 @@ export function renderEditor() {
     card.querySelector('.exercise-rest').value = exercise.rest ?? 90;
     card.querySelector('.exercise-cardio').checked = Boolean(exercise.cardio);
 
+    const upBtn = card.querySelector('.action-move-up');
+    const downBtn = card.querySelector('.action-move-down');
+
+    if (index === 0) upBtn.disabled = true;
+    if (index === draft.exercises.length - 1) downBtn.disabled = true;
+
     const setsList = card.querySelector('.sets-list');
 
-    exercise.sets.forEach((setItem, index) => {
+    exercise.sets.forEach((setItem, setIndex) => {
       const row = els.tplSetRow.content.firstElementChild.cloneNode(true);
-      row.dataset.setIndex = index;
-      row.querySelector('.set-index').textContent = index + 1;
+      row.dataset.setIndex = setIndex;
+      row.querySelector('.set-index').textContent = setIndex + 1;
       row.querySelector('.set-weight').value = setItem.weight;
       row.querySelector('.set-reps').value = setItem.reps;
       setsList.appendChild(row);

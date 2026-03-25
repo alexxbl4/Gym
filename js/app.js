@@ -3,14 +3,17 @@ import {
   setScreen,
   startNewRoutineDraft,
   editRoutineById,
+  duplicateRoutine,
   updateDraftName,
   addDraftExercise,
   removeDraftExercise,
+  moveDraftExercise,
   updateDraftExercise,
   addSetToExercise,
   removeSetFromExercise,
   updateSet,
   saveDraftRoutine,
+  importBackupData,
   deleteRoutine,
   startSession,
   updateActiveSet,
@@ -26,6 +29,8 @@ import {
   adjustRestTimer,
   stopRestTimer,
 } from './state.js';
+
+import { exportAppData } from './storage.js';
 
 import {
   showScreen,
@@ -55,6 +60,8 @@ const openLibraryBtn = document.getElementById('open-library-btn');
 const closeLibraryBtn = document.getElementById('close-library-btn');
 const saveCustomExBtn = document.getElementById('save-custom-ex-btn');
 const closeDetailBtn = document.getElementById('close-detail-btn');
+const exportBackupBtn = document.getElementById('export-backup-btn');
+const importBackupInput = document.getElementById('import-backup-input');
 const routineList = document.getElementById('routine-list');
 const exerciseList = document.getElementById('exercise-list');
 const trainExerciseList = document.getElementById('train-exercise-list');
@@ -108,6 +115,63 @@ function handleSaveRoutine() {
 
   showToast('✅ Rutina guardada');
   openScreen('routines');
+}
+
+function handleExportBackup() {
+  try {
+    const backup = exportAppData();
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `moonpro-backup-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ Backup exportado');
+  } catch {
+    showToast('⚠️ No se pudo exportar');
+  }
+}
+
+function handleImportBackup(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      const result = importBackupData(parsed);
+
+      if (!result.ok) {
+        showToast(`⚠️ ${result.error}`);
+        return;
+      }
+
+      clearInterval(sessionInterval);
+      sessionSeconds = 0;
+      updateTrainTimer(0);
+      stopRestFlow();
+
+      renderRoutines();
+      renderTrainScreen();
+      renderStats();
+      openScreen('routines');
+      showToast('✅ Backup importado');
+    } catch {
+      showToast('⚠️ Archivo JSON no válido');
+    } finally {
+      importBackupInput.value = '';
+    }
+  };
+
+  reader.onerror = () => {
+    showToast('⚠️ No se pudo leer el archivo');
+    importBackupInput.value = '';
+  };
+
+  reader.readAsText(file);
 }
 
 function handleStartSession(routineId) {
@@ -227,6 +291,12 @@ function bindTopLevelEvents() {
   closeLibraryBtn.addEventListener('click', closeLibraryModal);
   closeDetailBtn.addEventListener('click', closeExerciseDetailModal);
 
+  exportBackupBtn.addEventListener('click', handleExportBackup);
+  importBackupInput.addEventListener('change', e => {
+    const file = e.target.files?.[0];
+    handleImportBackup(file);
+  });
+
   routineNameInput.addEventListener('input', e => {
     updateDraftName(e.target.value);
   });
@@ -305,6 +375,17 @@ function bindRoutineListEvents() {
       return;
     }
 
+    if (e.target.closest('.action-duplicate')) {
+      const result = duplicateRoutine(id);
+      if (result.ok) {
+        renderRoutines();
+        showToast('✅ Rutina duplicada');
+      } else {
+        showToast(`⚠️ ${result.error}`);
+      }
+      return;
+    }
+
     if (e.target.closest('.action-delete')) {
       showConfirm({
         title: 'Borrar rutina',
@@ -374,6 +455,18 @@ function bindExerciseListEvents() {
 
     const exerciseId = card.dataset.exerciseId;
     if (!exerciseId) return;
+
+    if (e.target.closest('.action-move-up')) {
+      moveDraftExercise(exerciseId, 'up');
+      renderEditor();
+      return;
+    }
+
+    if (e.target.closest('.action-move-down')) {
+      moveDraftExercise(exerciseId, 'down');
+      renderEditor();
+      return;
+    }
 
     if (e.target.closest('.action-remove-exercise')) {
       removeDraftExercise(exerciseId);

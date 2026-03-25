@@ -1,80 +1,54 @@
 import {
-  state,
-  setScreen,
-  startNewRoutineDraft,
-  editRoutineById,
-  duplicateRoutine,
-  updateDraftName,
-  addDraftExercise,
-  removeDraftExercise,
-  moveDraftExercise,
-  updateDraftExercise,
-  addSetToExercise,
-  removeSetFromExercise,
-  updateSet,
-  saveDraftRoutine,
-  importBackupData,
-  deleteRoutine,
-  startSession,
-  updateActiveSet,
-  toggleActiveSetDone,
-  finishSession,
-  resetAllData,
-  setLibraryQuery,
-  setLibraryCategory,
-  addLibraryExerciseToDraft,
-  saveCustomExercise,
-  startRestTimer,
-  tickRestTimer,
-  adjustRestTimer,
-  stopRestTimer,
+  state, setScreen, startNewRoutineDraft, editRoutineById, duplicateRoutine,
+  updateDraftName, addDraftExercise, removeDraftExercise, moveDraftExercise,
+  updateDraftExercise, addSetToExercise, removeSetFromExercise, updateSet,
+  saveDraftRoutine, importBackupData, deleteRoutine, startSession,
+  updateActiveSet, toggleActiveSetDone, finishSession, resetAllData,
+  setLibraryQuery, setLibraryCategory, addLibraryExerciseToDraft,
+  saveCustomExercise, startRestTimer, tickRestTimer, adjustRestTimer, stopRestTimer
 } from './state.js';
 
 import { exportAppData } from './storage.js';
 
 import {
-  showScreen,
-  renderRoutines,
-  renderEditor,
-  renderTrainScreen,
-  renderStats,
-  renderLibrary,
-  openLibraryModal,
-  closeLibraryModal,
-  openExerciseDetailModal,
-  closeExerciseDetailModal,
-  renderRestTimer,
-  showToast,
-  showConfirm,
-  bindConfirmEvents,
-  initIcons,
-  updateTrainTimer,
+  showScreen, renderRoutines, renderEditor, renderTrainScreen, renderStats,
+  renderLibrary, openLibraryModal, closeLibraryModal, openExerciseDetailModal,
+  closeExerciseDetailModal, renderRestTimer, showToast, showConfirm,
+  bindConfirmEvents, initIcons, updateTrainTimer,
+  currentCalDate, renderCalendar, showSummaryModal, closeSummaryModal
 } from './ui.js';
 
-const routineNameInput = document.getElementById('routine-name');
-const newRoutineBtn = document.getElementById('new-routine-btn');
-const backRoutinesBtn = document.getElementById('back-routines-btn');
-const saveRoutineBtn = document.getElementById('save-routine-btn');
-const addExerciseBtn = document.getElementById('add-exercise-btn');
-const openLibraryBtn = document.getElementById('open-library-btn');
-const closeLibraryBtn = document.getElementById('close-library-btn');
-const saveCustomExBtn = document.getElementById('save-custom-ex-btn');
-const closeDetailBtn = document.getElementById('close-detail-btn');
-const exportBackupBtn = document.getElementById('export-backup-btn');
-const importBackupInput = document.getElementById('import-backup-input');
-const routineList = document.getElementById('routine-list');
-const exerciseList = document.getElementById('exercise-list');
-const trainExerciseList = document.getElementById('train-exercise-list');
-const exerciseProgressList = document.getElementById('exercise-progress-list');
-const bottomNav = document.getElementById('bottom-nav');
-const finishSessionBtn = document.getElementById('finish-session-btn');
-const resetAppBtn = document.getElementById('reset-app-btn');
-const librarySearch = document.getElementById('library-search');
-const libraryCats = document.getElementById('library-cats');
-const libraryList = document.getElementById('library-list');
-const restMinusBtn = document.getElementById('rest-minus-btn');
-const restPlusBtn = document.getElementById('rest-plus-btn');
-const restSkipBtn = document.getElementById('rest-skip-btn');
+const els = {
+  routineNameInput: document.getElementById('routine-name'),
+  newRoutineBtn: document.getElementById('new-routine-btn'),
+  backRoutinesBtn: document.getElementById('back-routines-btn'),
+  saveRoutineBtn: document.getElementById('save-routine-btn'),
+  addExerciseBtn: document.getElementById('add-exercise-btn'),
+  openLibraryBtn: document.getElementById('open-library-btn'),
+  closeLibraryBtn: document.getElementById('close-library-btn'),
+  saveCustomExBtn: document.getElementById('save-custom-ex-btn'),
+  closeDetailBtn: document.getElementById('close-detail-btn'),
+  exportBackupBtn: document.getElementById('export-backup-btn'),
+  importBackupInput: document.getElementById('import-backup-input'),
+  routineList: document.getElementById('routine-list'),
+  exerciseList: document.getElementById('exercise-list'),
+  trainExerciseList: document.getElementById('train-exercise-list'),
+  exerciseProgressList: document.getElementById('exercise-progress-list'),
+  bottomNav: document.getElementById('bottom-nav'),
+  finishSessionBtn: document.getElementById('finish-session-btn'),
+  resetAppBtn: document.getElementById('reset-app-btn'),
+  librarySearch: document.getElementById('library-search'),
+  libraryCats: document.getElementById('library-cats'),
+  libraryList: document.getElementById('library-list'),
+  restMinusBtn: document.getElementById('rest-minus-btn'),
+  restPlusBtn: document.getElementById('rest-plus-btn'),
+  restSkipBtn: document.getElementById('rest-skip-btn'),
+  
+  // Nuevos
+  calPrev: document.getElementById('cal-prev'),
+  calNext: document.getElementById('cal-next'),
+  closeSummaryBtn: document.getElementById('close-summary-btn')
+};
 
 let sessionInterval = null;
 let sessionSeconds = 0;
@@ -83,147 +57,38 @@ let restInterval = null;
 function openScreen(name) {
   setScreen(name);
   showScreen(name);
-
   if (name === 'routines') renderRoutines();
   if (name === 'editor') renderEditor();
   if (name === 'train') renderTrainScreen();
   if (name === 'stats') renderStats();
 }
 
-function openEditorForNew() {
-  startNewRoutineDraft();
-  openScreen('editor');
-}
-
-function openEditorForEdit(id) {
-  const ok = editRoutineById(id);
-  if (!ok) {
-    showToast('No se encontró la rutina');
-    return;
-  }
-
-  openScreen('editor');
-}
-
-function handleSaveRoutine() {
-  const result = saveDraftRoutine();
-
-  if (!result.ok) {
-    showToast(`⚠️ ${result.error}`);
-    return;
-  }
-
-  showToast('✅ Rutina guardada');
-  openScreen('routines');
-}
-
-function handleExportBackup() {
-  try {
-    const backup = exportAppData();
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const stamp = new Date().toISOString().slice(0, 10);
-    a.href = url;
-    a.download = `moonpro-backup-${stamp}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('✅ Backup exportado');
-  } catch {
-    showToast('⚠️ No se pudo exportar');
-  }
-}
-
-function handleImportBackup(file) {
-  if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = () => {
-    try {
-      const parsed = JSON.parse(reader.result);
-      const result = importBackupData(parsed);
-
-      if (!result.ok) {
-        showToast(`⚠️ ${result.error}`);
-        return;
-      }
-
-      clearInterval(sessionInterval);
-      sessionSeconds = 0;
-      updateTrainTimer(0);
-      stopRestFlow();
-
-      renderRoutines();
-      renderTrainScreen();
-      renderStats();
-      openScreen('routines');
-      showToast('✅ Backup importado');
-    } catch {
-      showToast('⚠️ Archivo JSON no válido');
-    } finally {
-      importBackupInput.value = '';
-    }
-  };
-
-  reader.onerror = () => {
-    showToast('⚠️ No se pudo leer el archivo');
-    importBackupInput.value = '';
-  };
-
-  reader.readAsText(file);
-}
-
 function handleStartSession(routineId) {
   const result = startSession(routineId);
-
-  if (!result.ok) {
-    showToast(`⚠️ ${result.error}`);
-    return;
-  }
+  if (!result.ok) { showToast(`⚠️ ${result.error}`); return; }
 
   clearInterval(sessionInterval);
   sessionSeconds = 0;
   updateTrainTimer(sessionSeconds);
-
-  sessionInterval = setInterval(() => {
-    sessionSeconds += 1;
-    updateTrainTimer(sessionSeconds);
-  }, 1000);
-
+  sessionInterval = setInterval(() => { sessionSeconds++; updateTrainTimer(sessionSeconds); }, 1000);
   stopRestFlow();
   renderTrainScreen();
   openScreen('train');
   showToast('💪 Entrenamiento iniciado');
 }
 
-function buildPRMessage(newPRs) {
-  if (!newPRs || newPRs.length === 0) return '';
-
-  const uniqueExercises = [...new Set(newPRs.map(item => item.name))];
-  if (newPRs.length === 1) {
-    return `🏆 Nuevo PR en ${newPRs[0].name}`;
-  }
-
-  if (uniqueExercises.length === 1) {
-    return `🏆 ${newPRs.length} PRs nuevos en ${uniqueExercises[0]}`;
-  }
-
-  return `🏆 ${newPRs.length} PRs nuevos en ${uniqueExercises.length} ejercicios`;
-}
-
 function handleFinishSession() {
-  if (!state.activeSession) {
-    showToast('No hay sesión activa');
-    return;
-  }
-
+  if (!state.activeSession) return;
+  
   showConfirm({
     title: 'Finalizar sesión',
-    body: 'Se guardará en tu historial y progreso.',
+    body: 'Se guardará en tu historial.',
     onConfirm: () => {
       clearInterval(sessionInterval);
       stopRestFlow();
+
+      const rName = state.activeSession.routineName;
+      const rTime = sessionSeconds;
 
       const result = finishSession(sessionSeconds);
       sessionSeconds = 0;
@@ -232,34 +97,24 @@ function handleFinishSession() {
       renderStats();
 
       if (result.ok) {
-        const prMessage = buildPRMessage(result.newPRs);
-        if (prMessage) {
-          showToast(prMessage, 2600);
-        } else {
-          showToast(`✅ Guardado · ${result.completedSets} series`);
-        }
-        openScreen('stats');
+        showSummaryModal(rName, rTime, result.volume, result.completedSets, result.newPRs || []);
       } else {
         showToast('⚠️ No se pudo guardar la sesión');
       }
-    },
+    }
   });
 }
 
 function startRestFlow(seconds) {
   stopRestFlow();
   if (!seconds || seconds <= 0) return;
-
   startRestTimer(seconds);
   renderRestTimer();
-
   restInterval = setInterval(() => {
     tickRestTimer();
     renderRestTimer();
-
     if (!state.restTimer.active) {
       clearInterval(restInterval);
-      restInterval = null;
       showToast('⏱️ Descanso terminado', 1800);
     }
   }, 1000);
@@ -267,323 +122,150 @@ function startRestFlow(seconds) {
 
 function stopRestFlow() {
   clearInterval(restInterval);
-  restInterval = null;
   stopRestTimer();
   renderRestTimer();
 }
 
-function bindTopLevelEvents() {
-  newRoutineBtn.addEventListener('click', openEditorForNew);
-  backRoutinesBtn.addEventListener('click', () => openScreen('routines'));
-  saveRoutineBtn.addEventListener('click', handleSaveRoutine);
-
-  addExerciseBtn.addEventListener('click', () => {
-    addDraftExercise();
-    renderEditor();
+function bindEvents() {
+  els.newRoutineBtn.addEventListener('click', () => { startNewRoutineDraft(); openScreen('editor'); });
+  els.backRoutinesBtn.addEventListener('click', () => openScreen('routines'));
+  
+  els.saveRoutineBtn.addEventListener('click', () => {
+    const r = saveDraftRoutine();
+    if(r.ok) { showToast('✅ Guardado'); openScreen('routines'); }
+    else showToast(`⚠️ ${r.error}`);
   });
 
-  openLibraryBtn.addEventListener('click', () => {
-    state.libraryTarget = 'editor';
-    renderLibrary();
-    openLibraryModal();
+  els.addExerciseBtn.addEventListener('click', () => { addDraftExercise(); renderEditor(); });
+  els.openLibraryBtn.addEventListener('click', () => { state.libraryTarget = 'editor'; renderLibrary(); openLibraryModal(); });
+  els.closeLibraryBtn.addEventListener('click', closeLibraryModal);
+  els.closeDetailBtn.addEventListener('click', closeExerciseDetailModal);
+  
+  els.closeSummaryBtn.addEventListener('click', () => {
+    closeSummaryModal();
+    openScreen('stats');
   });
 
-  closeLibraryBtn.addEventListener('click', closeLibraryModal);
-  closeDetailBtn.addEventListener('click', closeExerciseDetailModal);
+  els.calPrev.addEventListener('click', () => {
+    currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+    renderCalendar();
+  });
+  els.calNext.addEventListener('click', () => {
+    currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+    renderCalendar();
+  });
 
-  exportBackupBtn.addEventListener('click', handleExportBackup);
-  importBackupInput.addEventListener('change', e => {
+  els.exportBackupBtn.addEventListener('click', () => {
+    try {
+      const backup = exportAppData();
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `moonpro-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    } catch { showToast('⚠️ Error al exportar'); }
+  });
+
+  els.importBackupInput.addEventListener('change', e => {
     const file = e.target.files?.[0];
-    handleImportBackup(file);
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        if(importBackupData(JSON.parse(reader.result)).ok) {
+          clearInterval(sessionInterval); stopRestFlow();
+          openScreen('routines'); showToast('✅ Datos importados');
+        }
+      } catch { showToast('⚠️ Archivo inválido'); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
   });
 
-  routineNameInput.addEventListener('input', e => {
-    updateDraftName(e.target.value);
+  els.routineNameInput.addEventListener('input', e => updateDraftName(e.target.value));
+  els.finishSessionBtn.addEventListener('click', handleFinishSession);
+  
+  els.resetAppBtn.addEventListener('click', () => {
+    showConfirm({ title:'Borrar datos', body:'Esta acción no se deshace.', onConfirm: () => {
+      resetAllData(); clearInterval(sessionInterval); stopRestFlow(); openScreen('routines'); showToast('🗑️ Borrado');
+    }});
   });
 
-  finishSessionBtn.addEventListener('click', handleFinishSession);
+  els.restMinusBtn.addEventListener('click', () => adjustRestTimer(-15));
+  els.restPlusBtn.addEventListener('click', () => adjustRestTimer(15));
+  els.restSkipBtn.addEventListener('click', () => { stopRestFlow(); showToast('⏭️ Saltado'); });
 
-  resetAppBtn.addEventListener('click', () => {
-    showConfirm({
-      title: 'Borrar datos',
-      body: 'Eliminarás rutinas, biblioteca personalizada y estadísticas.',
-      onConfirm: () => {
-        resetAllData();
-        clearInterval(sessionInterval);
-        sessionSeconds = 0;
-        updateTrainTimer(0);
-        stopRestFlow();
-        renderRoutines();
-        renderTrainScreen();
-        renderStats();
-        openScreen('routines');
-        showToast('🗑️ Datos eliminados');
-      },
-    });
-  });
-
-  saveCustomExBtn.addEventListener('click', () => {
-    const result = saveCustomExercise(state.libraryQuery, 'Mis ejercicios');
-    if (!result.ok) {
-      showToast(`⚠️ ${result.error}`);
-      return;
-    }
-    renderLibrary();
-    showToast('✅ Ejercicio guardado');
-  });
-
-  restMinusBtn.addEventListener('click', () => {
-    adjustRestTimer(-15);
-    renderRestTimer();
-    if (!state.restTimer.active) stopRestFlow();
-  });
-
-  restPlusBtn.addEventListener('click', () => {
-    adjustRestTimer(15);
-    renderRestTimer();
-  });
-
-  restSkipBtn.addEventListener('click', () => {
-    stopRestFlow();
-    showToast('⏭️ Descanso saltado', 1600);
-  });
-}
-
-function bindBottomNav() {
-  bottomNav.addEventListener('click', e => {
+  els.bottomNav.addEventListener('click', e => {
     const btn = e.target.closest('.nav-item');
-    if (!btn) return;
-    openScreen(btn.dataset.screen);
+    if (btn) openScreen(btn.dataset.screen);
   });
-}
 
-function bindRoutineListEvents() {
-  routineList.addEventListener('click', e => {
-    const card = e.target.closest('.routine-card');
-    if (!card) return;
-
-    const id = card.dataset.id;
-    if (!id) return;
-
-    if (e.target.closest('.action-train')) {
-      handleStartSession(id);
-      return;
-    }
-
-    if (e.target.closest('.action-edit')) {
-      openEditorForEdit(id);
-      return;
-    }
-
-    if (e.target.closest('.action-duplicate')) {
-      const result = duplicateRoutine(id);
-      if (result.ok) {
-        renderRoutines();
-        showToast('✅ Rutina duplicada');
-      } else {
-        showToast(`⚠️ ${result.error}`);
-      }
-      return;
-    }
-
+  els.routineList.addEventListener('click', e => {
+    const id = e.target.closest('.routine-card')?.dataset.id;
+    if(!id) return;
+    if (e.target.closest('.action-train')) handleStartSession(id);
+    if (e.target.closest('.action-edit')) { editRoutineById(id); openScreen('editor'); }
+    if (e.target.closest('.action-duplicate')) { duplicateRoutine(id); renderRoutines(); }
     if (e.target.closest('.action-delete')) {
-      showConfirm({
-        title: 'Borrar rutina',
-        body: 'Esta acción no se puede deshacer.',
-        onConfirm: () => {
-          const ok = deleteRoutine(id);
-          if (ok) {
-            renderRoutines();
-            renderStats();
-            showToast('🗑️ Rutina eliminada');
-          } else {
-            showToast('⚠️ No se pudo borrar');
-          }
-        },
-      });
+      showConfirm({ title:'Borrar rutina', body:'', onConfirm:()=> { deleteRoutine(id); renderRoutines(); }});
     }
   });
-}
 
-function bindExerciseListEvents() {
-  exerciseList.addEventListener('input', e => {
-    const card = e.target.closest('.exercise-card');
-    if (!card) return;
-
-    const exerciseId = card.dataset.exerciseId;
-    if (!exerciseId) return;
-
-    if (e.target.matches('.exercise-name')) {
-      updateDraftExercise(exerciseId, { name: e.target.value });
-      return;
-    }
-
-    if (e.target.matches('.exercise-rest')) {
-      updateDraftExercise(exerciseId, { rest: Number(e.target.value) || 0 });
-      return;
-    }
-
+  els.exerciseList.addEventListener('input', e => {
+    const exId = e.target.closest('.exercise-card')?.dataset.exerciseId;
+    if(!exId) return;
+    if(e.target.matches('.exercise-name')) updateDraftExercise(exId, {name: e.target.value});
+    if(e.target.matches('.exercise-rest')) updateDraftExercise(exId, {rest: Number(e.target.value)||0});
+    
     const row = e.target.closest('.set-row');
-    if (row) {
-      const setIndex = Number(row.dataset.setIndex);
-
-      if (e.target.matches('.set-weight')) {
-        updateSet(exerciseId, setIndex, 'weight', e.target.value);
-      }
-
-      if (e.target.matches('.set-reps')) {
-        updateSet(exerciseId, setIndex, 'reps', e.target.value);
-      }
+    if(row) {
+      const idx = Number(row.dataset.setIndex);
+      if(e.target.matches('.set-weight')) updateSet(exId, idx, 'weight', e.target.value);
+      if(e.target.matches('.set-reps')) updateSet(exId, idx, 'reps', e.target.value);
     }
   });
 
-  exerciseList.addEventListener('change', e => {
-    const card = e.target.closest('.exercise-card');
-    if (!card) return;
-
-    const exerciseId = card.dataset.exerciseId;
-    if (!exerciseId) return;
-
-    if (e.target.matches('.exercise-cardio')) {
-      updateDraftExercise(exerciseId, { cardio: e.target.checked });
-    }
-  });
-
-  exerciseList.addEventListener('click', e => {
-    const card = e.target.closest('.exercise-card');
-    if (!card) return;
-
-    const exerciseId = card.dataset.exerciseId;
-    if (!exerciseId) return;
-
-    if (e.target.closest('.action-move-up')) {
-      moveDraftExercise(exerciseId, 'up');
-      renderEditor();
-      return;
-    }
-
-    if (e.target.closest('.action-move-down')) {
-      moveDraftExercise(exerciseId, 'down');
-      renderEditor();
-      return;
-    }
-
-    if (e.target.closest('.action-remove-exercise')) {
-      removeDraftExercise(exerciseId);
-      renderEditor();
-      return;
-    }
-
-    if (e.target.closest('.action-add-set')) {
-      addSetToExercise(exerciseId);
-      renderEditor();
-      return;
-    }
-
-    if (e.target.closest('.action-remove-set')) {
-      const row = e.target.closest('.set-row');
-      if (!row) return;
-      removeSetFromExercise(exerciseId, Number(row.dataset.setIndex));
+  els.exerciseList.addEventListener('click', e => {
+    const exId = e.target.closest('.exercise-card')?.dataset.exerciseId;
+    if(!exId) return;
+    if(e.target.closest('.action-move-up')) { moveDraftExercise(exId, 'up'); renderEditor(); }
+    if(e.target.closest('.action-move-down')) { moveDraftExercise(exId, 'down'); renderEditor(); }
+    if(e.target.closest('.action-remove-exercise')) { removeDraftExercise(exId); renderEditor(); }
+    if(e.target.closest('.action-add-set')) { addSetToExercise(exId); renderEditor(); }
+    if(e.target.closest('.action-remove-set')) {
+      removeSetFromExercise(exId, Number(e.target.closest('.set-row').dataset.setIndex));
       renderEditor();
     }
   });
-}
 
-function bindTrainEvents() {
-  trainExerciseList.addEventListener('input', e => {
-    const card = e.target.closest('.train-card');
-    if (!card) return;
-
-    const exerciseId = card.dataset.exerciseId;
-    if (!exerciseId) return;
-
-    const row = e.target.closest('.train-set-row');
-    if (!row) return;
-
-    const setIndex = Number(row.dataset.setIndex);
-
-    if (e.target.matches('.train-set-weight')) {
-      updateActiveSet(exerciseId, setIndex, 'weight', e.target.value);
-    }
-
-    if (e.target.matches('.train-set-reps')) {
-      updateActiveSet(exerciseId, setIndex, 'reps', e.target.value);
-    }
+  els.trainExerciseList.addEventListener('input', e => {
+    const exId = e.target.closest('.train-card')?.dataset.exerciseId;
+    const idx = Number(e.target.closest('.train-set-row')?.dataset.setIndex);
+    if(!exId || isNaN(idx)) return;
+    if(e.target.matches('.train-set-weight')) updateActiveSet(exId, idx, 'weight', e.target.value);
+    if(e.target.matches('.train-set-reps')) updateActiveSet(exId, idx, 'reps', e.target.value);
   });
 
-  trainExerciseList.addEventListener('change', e => {
-    const card = e.target.closest('.train-card');
-    if (!card) return;
-
-    const exerciseId = card.dataset.exerciseId;
-    if (!exerciseId) return;
-
-    const row = e.target.closest('.train-set-row');
-    if (!row) return;
-
-    const setIndex = Number(row.dataset.setIndex);
-
-    if (e.target.matches('.train-set-done')) {
-      toggleActiveSetDone(exerciseId, setIndex, e.target.checked);
-
-      if (e.target.checked) {
-        const exercise = state.activeSession?.exercises.find(ex => ex.id === exerciseId);
-        startRestFlow(Number(exercise?.rest || 0));
-      }
-
+  els.trainExerciseList.addEventListener('change', e => {
+    if(e.target.matches('.train-set-done')) {
+      const exId = e.target.closest('.train-card').dataset.exerciseId;
+      const idx = Number(e.target.closest('.train-set-row').dataset.setIndex);
+      toggleActiveSetDone(exId, idx, e.target.checked);
+      if(e.target.checked) startRestFlow(state.activeSession.exercises.find(ex=>ex.id===exId)?.rest || 90);
       renderTrainScreen();
     }
   });
-}
 
-function bindLibraryEvents() {
-  librarySearch.addEventListener('input', e => {
-    setLibraryQuery(e.target.value);
-    renderLibrary();
-  });
-
-  libraryCats.addEventListener('click', e => {
-    const btn = e.target.closest('.chip');
-    if (!btn) return;
-    setLibraryCategory(btn.dataset.cat);
-    renderLibrary();
-  });
-
-  libraryList.addEventListener('click', e => {
-    const card = e.target.closest('.library-item');
-    if (!card) return;
-
-    if (e.target.closest('.action-library-add')) {
-      addLibraryExerciseToDraft(card.dataset.name);
-      renderEditor();
-      closeLibraryModal();
-      showToast('✅ Ejercicio añadido');
-    }
-  });
-}
-
-function bindStatsEvents() {
-  exerciseProgressList.addEventListener('click', e => {
-    const card = e.target.closest('.history-item');
-    if (!card) return;
-    const name = card.dataset.exerciseName;
-    if (!name) return;
-    openExerciseDetailModal(name);
+  els.exerciseProgressList.addEventListener('click', e => {
+    const name = e.target.closest('.history-item')?.dataset.exerciseName;
+    if(name) openExerciseDetailModal(name);
   });
 }
 
 function init() {
   bindConfirmEvents();
-  bindTopLevelEvents();
-  bindBottomNav();
-  bindRoutineListEvents();
-  bindExerciseListEvents();
-  bindTrainEvents();
-  bindLibraryEvents();
-  bindStatsEvents();
+  bindEvents();
   initIcons();
-  updateTrainTimer(0);
-  renderRestTimer();
   openScreen('routines');
 }
 

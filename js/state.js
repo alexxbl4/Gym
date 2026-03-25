@@ -310,12 +310,18 @@ export function stopRestTimer() {
   state.restTimer.remaining = 0;
 }
 
+function getPreviousExercisePRs(exerciseName) {
+  const history = getExerciseDetail(exerciseName);
+  return history.prs;
+}
+
 export function finishSession(durationSec) {
   if (!state.activeSession) return { ok: false };
 
   let completedSets = 0;
   let volume = 0;
   const exerciseDetails = [];
+  const newPRs = [];
 
   state.activeSession.exercises.forEach(exercise => {
     let exerciseVolume = 0;
@@ -344,6 +350,24 @@ export function finishSession(durationSec) {
       });
 
     if (doneSets.length > 0) {
+      const prev = getPreviousExercisePRs(exercise.name);
+
+      if (bestWeight > prev.bestWeight) {
+        newPRs.push({ name: exercise.name, type: 'Peso', value: bestWeight });
+      }
+
+      if (exerciseVolume > prev.bestVolume) {
+        newPRs.push({ name: exercise.name, type: 'Volumen', value: exerciseVolume });
+      }
+
+      if (bestEstimated1RM > prev.bestEstimated1RM) {
+        newPRs.push({
+          name: exercise.name,
+          type: '1RM',
+          value: Math.round(bestEstimated1RM),
+        });
+      }
+
       exerciseDetails.push({
         exerciseId: exercise.id,
         name: exercise.name,
@@ -372,7 +396,7 @@ export function finishSession(durationSec) {
   state.activeSession = null;
   stopRestTimer();
   const ok = persist();
-  return { ok, completedSets, volume };
+  return { ok, completedSets, volume, newPRs };
 }
 
 export function getStats() {
@@ -455,10 +479,24 @@ export function getExerciseDetail(name) {
     { bestWeight: 0, bestVolume: 0, bestEstimated1RM: 0, sessions: 0 }
   );
 
+  const chartPoints = [...history]
+    .reverse()
+    .map((item, index) => ({
+      x: index + 1,
+      label: new Date(item.date).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+      }),
+      bestWeight: item.bestWeight,
+      volume: item.volume,
+      bestEstimated1RM: Math.round(item.bestEstimated1RM),
+    }));
+
   return {
     name,
     prs,
     history,
+    chartPoints,
   };
 }
 

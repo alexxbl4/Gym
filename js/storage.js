@@ -39,7 +39,6 @@ function normalizeExercise(exercise, fallbackId) {
 
 function normalizeRoutine(routine, key) {
   const exercises = Array.isArray(routine?.exercises) ? routine.exercises : [];
-
   return {
     id: routine?.id || key,
     name: routine?.name || 'Rutina',
@@ -72,9 +71,7 @@ function normalizeCustomExercise(item, index) {
 }
 
 export function normalizeImportedData(rawData) {
-  if (!rawData || typeof rawData !== 'object') {
-    return createEmptyAppData();
-  }
+  if (!rawData || typeof rawData !== 'object') return createEmptyAppData();
 
   if (rawData._schemaVersion || rawData.routines || rawData.logs || rawData.customExercises) {
     return {
@@ -104,7 +101,6 @@ export function normalizeImportedData(rawData) {
 
 export function loadAppData() {
   if (!storageReady) return createEmptyAppData();
-
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.app);
     const parsed = raw ? JSON.parse(raw) : createEmptyAppData();
@@ -118,7 +114,6 @@ export function loadAppData() {
 
 export function saveAppData(data) {
   if (!storageReady) return false;
-
   try {
     localStorage.setItem(STORAGE_KEYS.app, JSON.stringify(data));
     return true;
@@ -129,7 +124,6 @@ export function saveAppData(data) {
 
 export function clearAppData() {
   if (!storageReady) return false;
-
   try {
     localStorage.removeItem(STORAGE_KEYS.app);
     return true;
@@ -139,10 +133,9 @@ export function clearAppData() {
 }
 
 export function exportAppData() {
-  const data = loadAppData();
   return {
     exportedAt: new Date().toISOString(),
     app: 'MoonPro',
-    data,
+    data: loadAppData(),
   };
 }

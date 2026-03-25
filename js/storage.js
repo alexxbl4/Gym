@@ -18,6 +18,7 @@ function createEmptyAppData() {
     _schemaVersion: APP_SCHEMA_VERSION,
     routines: {},
     logs: [],
+    customExercises: [],
   };
 }
 
@@ -61,18 +62,42 @@ function normalizeLog(log, index) {
   };
 }
 
+function normalizeCustomExercise(item, index) {
+  return {
+    id: item?.id || `cust_${index + 1}`,
+    name: item?.name || 'Ejercicio',
+    cat: item?.cat || 'Mis ejercicios',
+  };
+}
+
 function migrateData(rawData) {
   if (!rawData || typeof rawData !== 'object') {
     return createEmptyAppData();
   }
 
-  if (rawData._schemaVersion === APP_SCHEMA_VERSION && rawData.routines && rawData.logs) {
+  if (rawData._schemaVersion === APP_SCHEMA_VERSION) {
     return {
       _schemaVersion: APP_SCHEMA_VERSION,
       routines: Object.fromEntries(
-        Object.entries(rawData.routines).map(([key, routine]) => [key, normalizeRoutine(routine, key)])
+        Object.entries(rawData.routines || {}).map(([key, routine]) => [key, normalizeRoutine(routine, key)])
       ),
-      logs: rawData.logs.map(normalizeLog),
+      logs: Array.isArray(rawData.logs) ? rawData.logs.map(normalizeLog) : [],
+      customExercises: Array.isArray(rawData.customExercises)
+        ? rawData.customExercises.map(normalizeCustomExercise)
+        : [],
+    };
+  }
+
+  if (rawData.routines || rawData.logs) {
+    return {
+      _schemaVersion: APP_SCHEMA_VERSION,
+      routines: Object.fromEntries(
+        Object.entries(rawData.routines || {}).map(([key, routine]) => [key, normalizeRoutine(routine, key)])
+      ),
+      logs: Array.isArray(rawData.logs) ? rawData.logs.map(normalizeLog) : [],
+      customExercises: Array.isArray(rawData.customExercises)
+        ? rawData.customExercises.map(normalizeCustomExercise)
+        : [],
     };
   }
 
@@ -85,6 +110,7 @@ function migrateData(rawData) {
     _schemaVersion: APP_SCHEMA_VERSION,
     routines,
     logs: [],
+    customExercises: [],
   };
 }
 

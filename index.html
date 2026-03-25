@@ -68,6 +68,23 @@
     </div>
   </div>
 
+  <div id="exercise-detail-modal" class="modal hidden">
+    <div class="modal-sheet">
+      <div class="section-head modal-sheet-head">
+        <div>
+          <p class="eyebrow">Progreso</p>
+          <h2 id="exercise-detail-title" class="section-title">Ejercicio</h2>
+        </div>
+        <button id="close-detail-btn" class="icon-btn" aria-label="Cerrar detalle">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div id="exercise-detail-prs" class="stats-grid"></div>
+      <div id="exercise-detail-history" class="stack"></div>
+    </div>
+  </div>
+
   <div id="rest-bar" class="rest-bar hidden">
     <div class="rest-top-line">
       <div id="rest-progress" class="rest-progress"></div>
@@ -146,6 +163,11 @@
 
     <section class="panel">
       <div id="stats-grid" class="stats-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">Progreso por ejercicio</h2>
+      <div id="exercise-progress-list" class="stack"></div>
     </section>
 
     <section class="panel">

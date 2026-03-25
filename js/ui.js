@@ -160,7 +160,6 @@ export function openExerciseDetailModal(name) {
     <div class="stat-card"><p class="stat-value">${detail.prs.sessions}</p><p class="stat-label">Sesiones</p></div>
   `;
   
-  // Omitimos chart aquí por simplificar en vanilla (igual que versión anterior)
   els.detailHistory.innerHTML = '';
   if (detail.history.length === 0) {
     els.detailHistory.innerHTML = '<div class="empty-box">Aún no hay historial para este ejercicio.</div>';
@@ -256,8 +255,49 @@ function showCalendarDetail(day, logs) {
 }
 
 
-// OTRAS FUNCIONES UI QUE YA TENÍAS
-export function renderLibrary() { /* ... igual que antes ... */ }
+// BIBLIOTECA DE EJERCICIOS COMPLETADA
+export function renderLibrary() {
+  els.librarySearch.value = state.libraryQuery;
+  els.libraryCats.innerHTML = '';
+
+  LIBRARY_CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = `chip ${state.libraryCategory === cat ? 'active' : ''}`;
+    btn.dataset.cat = cat;
+    btn.textContent = cat;
+    els.libraryCats.appendChild(btn);
+  });
+
+  const list = getFilteredLibrary();
+  els.libraryList.innerHTML = '';
+
+  list.forEach(item => {
+    const node = els.tplLibraryItem.content.firstElementChild.cloneNode(true);
+    node.dataset.name = item.name;
+    node.querySelector('.library-cat').textContent = item.cat;
+    node.querySelector('.library-name').textContent = item.name;
+    els.libraryList.appendChild(node);
+  });
+
+  const query = state.libraryQuery.trim();
+  const exactMatch = list.some(item => item.name.toLowerCase() === query.toLowerCase());
+  const canSuggest = query.length > 2 && !exactMatch;
+
+  els.libraryCustomBox.classList.toggle('hidden', !canSuggest);
+  els.libraryCustomText.textContent = canSuggest
+    ? `Guardar "${query}" en Mis ejercicios`
+    : '';
+
+  if (list.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-box';
+    empty.textContent = 'No hay ejercicios para ese filtro.';
+    els.libraryList.appendChild(empty);
+  }
+
+  initIcons();
+}
+
 export function renderRoutines() {
   const routines = getRoutinesArray();
   els.routineList.innerHTML = '';
@@ -348,48 +388,4 @@ export function renderStats() {
     <div class="stat-card"><p class="stat-value">${Math.round(stats.totalVolume/1000)}k</p><p class="stat-label">KG Movidos</p></div>
   `;
 
-  const exerciseProgress = getExerciseProgressList();
-  els.exerciseProgressList.innerHTML = '';
-  if (exerciseProgress.length === 0) {
-    els.exerciseProgressList.innerHTML = '<div class="empty-box">Completa entrenamientos para ver progreso.</div>';
-  } else {
-    exerciseProgress.slice(0, 5).forEach(item => { // Solo mostramos top 5
-      const article = document.createElement('article');
-      article.className = 'history-item';
-      article.dataset.exerciseName = item.name;
-      article.innerHTML = `<h4>${item.name}</h4><p>${item.sessions} sesiones · Top ${Math.round(item.bestWeight)} kg</p>`;
-      els.exerciseProgressList.appendChild(article);
-    });
-  }
-
-  els.historyList.innerHTML = '';
-  if (state.logs.length === 0) {
-    els.historyList.innerHTML = '<div class="empty-box">Todavía no hay historial.</div>';
-  } else {
-    state.logs.slice(0,10).forEach(log => {
-      const item = document.createElement('article');
-      item.className = 'history-item';
-      item.innerHTML = `<h4>${log.routineName}</h4><p>${formatDate(log.endedAt)} · ${formatDuration(log.durationSec)} · ${Math.round(log.volume)} kg</p>`;
-      els.historyList.appendChild(item);
-    });
-  }
-}
-
-export function updateTrainTimer(seconds) { els.trainTimer.textContent = formatDuration(seconds); }
-export function renderRestTimer() {
-  const timer = state.restTimer;
-  if (!timer.active) { els.restBar.classList.add('hidden'); return; }
-  els.restBar.classList.remove('hidden');
-  els.restTime.textContent = formatDuration(timer.remaining);
-  els.restProgress.style.width = `${(timer.remaining / timer.total) * 100}%`;
-}
-
-export function formatDuration(totalSec = 0) {
-  const mins = String(Math.floor(totalSec / 60)).padStart(2, '0');
-  const secs = String(totalSec % 60).padStart(2, '0');
-  return `${mins}:${secs}`;
-}
-function formatDate(iso) {
-  try { return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }); } 
-  catch { return 'Fecha'; }
-}
+  const exerciseProgress = getExerciseProgress

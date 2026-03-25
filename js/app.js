@@ -17,6 +17,14 @@ import {
   toggleActiveSetDone,
   finishSession,
   resetAllData,
+  setLibraryQuery,
+  setLibraryCategory,
+  addLibraryExerciseToDraft,
+  saveCustomExercise,
+  startRestTimer,
+  tickRestTimer,
+  adjustRestTimer,
+  stopRestTimer,
 } from './state.js';
 
 import {
@@ -25,6 +33,10 @@ import {
   renderEditor,
   renderTrainScreen,
   renderStats,
+  renderLibrary,
+  openLibraryModal,
+  closeLibraryModal,
+  renderRestTimer,
   showToast,
   showConfirm,
   bindConfirmEvents,
@@ -37,15 +49,25 @@ const newRoutineBtn = document.getElementById('new-routine-btn');
 const backRoutinesBtn = document.getElementById('back-routines-btn');
 const saveRoutineBtn = document.getElementById('save-routine-btn');
 const addExerciseBtn = document.getElementById('add-exercise-btn');
+const openLibraryBtn = document.getElementById('open-library-btn');
+const closeLibraryBtn = document.getElementById('close-library-btn');
+const saveCustomExBtn = document.getElementById('save-custom-ex-btn');
 const routineList = document.getElementById('routine-list');
 const exerciseList = document.getElementById('exercise-list');
 const trainExerciseList = document.getElementById('train-exercise-list');
 const bottomNav = document.getElementById('bottom-nav');
 const finishSessionBtn = document.getElementById('finish-session-btn');
 const resetAppBtn = document.getElementById('reset-app-btn');
+const librarySearch = document.getElementById('library-search');
+const libraryCats = document.getElementById('library-cats');
+const libraryList = document.getElementById('library-list');
+const restMinusBtn = document.getElementById('rest-minus-btn');
+const restPlusBtn = document.getElementById('rest-plus-btn');
+const restSkipBtn = document.getElementById('rest-skip-btn');
 
 let sessionInterval = null;
 let sessionSeconds = 0;
+let restInterval = null;
 
 function openScreen(name) {
   setScreen(name);
@@ -95,11 +117,13 @@ function handleStartSession(routineId) {
   clearInterval(sessionInterval);
   sessionSeconds = 0;
   updateTrainTimer(sessionSeconds);
+
   sessionInterval = setInterval(() => {
     sessionSeconds += 1;
     updateTrainTimer(sessionSeconds);
   }, 1000);
 
+  stopRestFlow();
   renderTrainScreen();
   openScreen('train');
   showToast('💪 Entrenamiento iniciado');
@@ -116,6 +140,8 @@ function handleFinishSession() {
     body: 'Se guardará en tu historial.',
     onConfirm: () => {
       clearInterval(sessionInterval);
+      stopRestFlow();
+
       const result = finishSession(sessionSeconds);
       sessionSeconds = 0;
       updateTrainTimer(0);
@@ -132,6 +158,32 @@ function handleFinishSession() {
   });
 }
 
+function startRestFlow(seconds) {
+  stopRestFlow();
+  if (!seconds || seconds <= 0) return;
+
+  startRestTimer(seconds);
+  renderRestTimer();
+
+  restInterval = setInterval(() => {
+    tickRestTimer();
+    renderRestTimer();
+
+    if (!state.restTimer.active) {
+      clearInterval(restInterval);
+      restInterval = null;
+      showToast('⏱️ Descanso terminado', 1800);
+    }
+  }, 1000);
+}
+
+function stopRestFlow() {
+  clearInterval(restInterval);
+  restInterval = null;
+  stopRestTimer();
+  renderRestTimer();
+}
+
 function bindTopLevelEvents() {
   newRoutineBtn.addEventListener('click', openEditorForNew);
   backRoutinesBtn.addEventListener('click', () => openScreen('routines'));
@@ -142,6 +194,14 @@ function bindTopLevelEvents() {
     renderEditor();
   });
 
+  openLibraryBtn.addEventListener('click', () => {
+    state.libraryTarget = 'editor';
+    renderLibrary();
+    openLibraryModal();
+  });
+
+  closeLibraryBtn.addEventListener('click', closeLibraryModal);
+
   routineNameInput.addEventListener('input', e => {
     updateDraftName(e.target.value);
   });
@@ -151,12 +211,13 @@ function bindTopLevelEvents() {
   resetAppBtn.addEventListener('click', () => {
     showConfirm({
       title: 'Borrar datos',
-      body: 'Eliminarás rutinas y estadísticas guardadas en este navegador.',
+      body: 'Eliminarás rutinas, biblioteca personalizada y estadísticas.',
       onConfirm: () => {
         resetAllData();
         clearInterval(sessionInterval);
         sessionSeconds = 0;
         updateTrainTimer(0);
+        stopRestFlow();
         renderRoutines();
         renderTrainScreen();
         renderStats();
@@ -164,6 +225,32 @@ function bindTopLevelEvents() {
         showToast('🗑️ Datos eliminados');
       },
     });
+  });
+
+  saveCustomExBtn.addEventListener('click', () => {
+    const result = saveCustomExercise(state.libraryQuery, 'Mis ejercicios');
+    if (!result.ok) {
+      showToast(`⚠️ ${result.error}`);
+      return;
+    }
+    renderLibrary();
+    showToast('✅ Ejercicio guardado');
+  });
+
+  restMinusBtn.addEventListener('click', () => {
+    adjustRestTimer(-15);
+    renderRestTimer();
+    if (!state.restTimer.active) stopRestFlow();
+  });
+
+  restPlusBtn.addEventListener('click', () => {
+    adjustRestTimer(15);
+    renderRestTimer();
+  });
+
+  restSkipBtn.addEventListener('click', () => {
+    stopRestFlow();
+    showToast('⏭️ Descanso saltado', 1600);
   });
 }
 
@@ -320,6 +407,39 @@ function bindTrainEvents() {
 
     if (e.target.matches('.train-set-done')) {
       toggleActiveSetDone(exerciseId, setIndex, e.target.checked);
+
+      if (e.target.checked) {
+        const exercise = state.activeSession?.exercises.find(ex => ex.id === exerciseId);
+        startRestFlow(Number(exercise?.rest || 0));
+      }
+
+      renderTrainScreen();
+    }
+  });
+}
+
+function bindLibraryEvents() {
+  librarySearch.addEventListener('input', e => {
+    setLibraryQuery(e.target.value);
+    renderLibrary();
+  });
+
+  libraryCats.addEventListener('click', e => {
+    const btn = e.target.closest('.chip');
+    if (!btn) return;
+    setLibraryCategory(btn.dataset.cat);
+    renderLibrary();
+  });
+
+  libraryList.addEventListener('click', e => {
+    const card = e.target.closest('.library-item');
+    if (!card) return;
+
+    if (e.target.closest('.action-library-add')) {
+      addLibraryExerciseToDraft(card.dataset.name);
+      renderEditor();
+      closeLibraryModal();
+      showToast('✅ Ejercicio añadido');
     }
   });
 }
@@ -331,8 +451,10 @@ function init() {
   bindRoutineListEvents();
   bindExerciseListEvents();
   bindTrainEvents();
+  bindLibraryEvents();
   initIcons();
   updateTrainTimer(0);
+  renderRestTimer();
   openScreen('routines');
 }
 

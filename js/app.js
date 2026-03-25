@@ -36,6 +36,8 @@ import {
   renderLibrary,
   openLibraryModal,
   closeLibraryModal,
+  openExerciseDetailModal,
+  closeExerciseDetailModal,
   renderRestTimer,
   showToast,
   showConfirm,
@@ -52,9 +54,11 @@ const addExerciseBtn = document.getElementById('add-exercise-btn');
 const openLibraryBtn = document.getElementById('open-library-btn');
 const closeLibraryBtn = document.getElementById('close-library-btn');
 const saveCustomExBtn = document.getElementById('save-custom-ex-btn');
+const closeDetailBtn = document.getElementById('close-detail-btn');
 const routineList = document.getElementById('routine-list');
 const exerciseList = document.getElementById('exercise-list');
 const trainExerciseList = document.getElementById('train-exercise-list');
+const exerciseProgressList = document.getElementById('exercise-progress-list');
 const bottomNav = document.getElementById('bottom-nav');
 const finishSessionBtn = document.getElementById('finish-session-btn');
 const resetAppBtn = document.getElementById('reset-app-btn');
@@ -137,7 +141,7 @@ function handleFinishSession() {
 
   showConfirm({
     title: 'Finalizar sesión',
-    body: 'Se guardará en tu historial.',
+    body: 'Se guardará en tu historial y progreso.',
     onConfirm: () => {
       clearInterval(sessionInterval);
       stopRestFlow();
@@ -201,6 +205,7 @@ function bindTopLevelEvents() {
   });
 
   closeLibraryBtn.addEventListener('click', closeLibraryModal);
+  closeDetailBtn.addEventListener('click', closeExerciseDetailModal);
 
   routineNameInput.addEventListener('input', e => {
     updateDraftName(e.target.value);
@@ -444,6 +449,16 @@ function bindLibraryEvents() {
   });
 }
 
+function bindStatsEvents() {
+  exerciseProgressList.addEventListener('click', e => {
+    const card = e.target.closest('.history-item');
+    if (!card) return;
+    const name = card.dataset.exerciseName;
+    if (!name) return;
+    openExerciseDetailModal(name);
+  });
+}
+
 function init() {
   bindConfirmEvents();
   bindTopLevelEvents();
@@ -452,6 +467,7 @@ function init() {
   bindExerciseListEvents();
   bindTrainEvents();
   bindLibraryEvents();
+  bindStatsEvents();
   initIcons();
   updateTrainTimer(0);
   renderRestTimer();

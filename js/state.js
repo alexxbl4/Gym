@@ -4,7 +4,12 @@ import {
   DEFAULT_LIBRARY,
   DEFAULT_REST,
 } from './constants.js';
-import { clearAppData, loadAppData, saveAppData } from './storage.js';
+import {
+  clearAppData,
+  loadAppData,
+  normalizeImportedData,
+  saveAppData,
+} from './storage.js';
 
 function createId(prefix = 'id') {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
@@ -157,6 +162,36 @@ export function editRoutineById(id) {
   return true;
 }
 
+export function duplicateRoutine(id) {
+  const routine = state.routines[id];
+  if (!routine) return { ok: false, error: 'Rutina no encontrada' };
+
+  const baseName = `${routine.name} copia`;
+  let nextName = baseName;
+  let count = 2;
+
+  while (
+    Object.values(state.routines).some(item => item.name.trim().toLowerCase() === nextName.trim().toLowerCase())
+  ) {
+    nextName = `${baseName} ${count}`;
+    count += 1;
+  }
+
+  const cloned = structuredClone(routine);
+  cloned.id = createId('rt');
+  cloned.name = nextName;
+  cloned.createdAt = new Date().toISOString();
+  cloned.updatedAt = new Date().toISOString();
+  cloned.exercises = cloned.exercises.map(ex => ({
+    ...ex,
+    id: createId('ex'),
+  }));
+
+  state.routines[cloned.id] = cloned;
+  const ok = persist();
+  return ok ? { ok: true, id: cloned.id } : { ok: false, error: 'No se pudo duplicar' };
+}
+
 export function updateDraftName(name) {
   state.draftRoutine.name = name;
   state.draftRoutine.updatedAt = new Date().toISOString();
@@ -172,6 +207,18 @@ export function removeDraftExercise(exerciseId) {
   if (state.draftRoutine.exercises.length === 0) {
     state.draftRoutine.exercises.push(createExercise());
   }
+}
+
+export function moveDraftExercise(exerciseId, direction) {
+  const index = state.draftRoutine.exercises.findIndex(ex => ex.id === exerciseId);
+  if (index === -1) return;
+
+  const targetIndex = direction === 'up' ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= state.draftRoutine.exercises.length) return;
+
+  const arr = state.draftRoutine.exercises;
+  [arr[index], arr[targetIndex]] = [arr[targetIndex], arr[index]];
+  state.draftRoutine.updatedAt = new Date().toISOString();
 }
 
 export function updateDraftExercise(exerciseId, patch) {
@@ -236,6 +283,24 @@ export function saveDraftRoutine() {
 
   const ok = persist();
   return ok ? { ok: true } : { ok: false, error: 'No se pudo guardar' };
+}
+
+export function importBackupData(parsedBackup) {
+  const data = parsedBackup?.data ?? parsedBackup;
+  const normalized = normalizeImportedData(data);
+
+  state.routines = normalized.routines || {};
+  state.logs = normalized.logs || [];
+  state.customExercises = normalized.customExercises || [];
+  state.activeSession = null;
+  state.editingRoutineId = null;
+  state.draftRoutine = createRoutine();
+  state.libraryCategory = 'Todos';
+  state.libraryQuery = '';
+  stopRestTimer();
+
+  const ok = persist();
+  return ok ? { ok: true } : { ok: false, error: 'No se pudo importar' };
 }
 
 export function deleteRoutine(id) {

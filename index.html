@@ -35,7 +35,7 @@
     </div>
   </div>
 
-  <main id="screen-main" class="screen">
+  <main id="screen-routines" class="screen">
     <header class="page-header">
       <h1>MOON<span>PRO</span></h1>
     </header>
@@ -51,7 +51,7 @@
 
   <section id="screen-editor" class="screen hidden">
     <header class="page-header editor-header">
-      <button id="back-main-btn" class="btn btn-ghost small">Atrás</button>
+      <button id="back-routines-btn" class="btn btn-ghost small">Atrás</button>
       <h1>Editor</h1>
       <button id="save-routine-btn" class="btn btn-primary small">Guardar</button>
     </header>
@@ -67,6 +67,77 @@
     </div>
   </section>
 
+  <section id="screen-train" class="screen hidden">
+    <header class="page-header editor-header">
+      <h1>Entrenar</h1>
+      <div id="train-timer" class="timer-pill">00:00</div>
+    </header>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Sesión activa</p>
+          <h2 id="train-routine-name">Sin rutina</h2>
+        </div>
+        <button id="finish-session-btn" class="btn btn-primary small">Finalizar</button>
+      </div>
+      <div id="train-empty" class="empty-box">
+        Elige una rutina en “Rutinas” y pulsa entrenar.
+      </div>
+      <div id="train-exercise-list" class="stack hidden"></div>
+    </section>
+  </section>
+
+  <section id="screen-stats" class="screen hidden">
+    <header class="page-header editor-header">
+      <h1>Estadísticas</h1>
+    </header>
+
+    <section class="panel">
+      <div id="stats-grid" class="stats-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">Historial</h2>
+      <div id="history-list" class="stack"></div>
+    </section>
+  </section>
+
+  <section id="screen-settings" class="screen hidden">
+    <header class="page-header editor-header">
+      <h1>Ajustes</h1>
+    </header>
+
+    <section class="panel stack">
+      <div class="setting-row">
+        <div>
+          <p class="eyebrow">Almacenamiento</p>
+          <p class="setting-text">Tus datos se guardan en este navegador.</p>
+        </div>
+      </div>
+      <button id="reset-app-btn" class="btn btn-danger">Borrar todos los datos</button>
+    </section>
+  </section>
+
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-item nav-active" data-screen="routines">
+      <i data-lucide="dumbbell"></i>
+      <span>Rutinas</span>
+    </button>
+    <button class="nav-item" data-screen="train">
+      <i data-lucide="play-circle"></i>
+      <span>Entrenar</span>
+    </button>
+    <button class="nav-item" data-screen="stats">
+      <i data-lucide="bar-chart-3"></i>
+      <span>Estadísticas</span>
+    </button>
+    <button class="nav-item" data-screen="settings">
+      <i data-lucide="settings"></i>
+      <span>Ajustes</span>
+    </button>
+  </nav>
+
   <template id="routine-card-template">
     <article class="card routine-card">
       <div>
@@ -75,6 +146,7 @@
         <p class="routine-meta"></p>
       </div>
       <div class="card-actions">
+        <button class="btn btn-secondary small action-train">Entrenar</button>
         <button class="btn btn-secondary small action-edit">Editar</button>
         <button class="btn btn-danger small action-delete">Borrar</button>
       </div>
@@ -123,6 +195,36 @@
       <button class="icon-btn action-remove-set" aria-label="Eliminar serie">
         <i data-lucide="minus"></i>
       </button>
+    </div>
+  </template>
+
+  <template id="train-card-template">
+    <article class="card train-card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Ejercicio</p>
+          <h3 class="routine-name train-ex-name"></h3>
+        </div>
+        <div class="train-rest"></div>
+      </div>
+      <div class="sets-head">
+        <span>#</span>
+        <span class="grow">KG / KM</span>
+        <span class="grow">REPS / MIN</span>
+        <span>OK</span>
+      </div>
+      <div class="train-sets-list stack-sm"></div>
+    </article>
+  </template>
+
+  <template id="train-set-row-template">
+    <div class="set-row train-set-row">
+      <span class="set-index"></span>
+      <input class="train-set-weight input-mini grow" type="number" step="any" placeholder="0" />
+      <input class="train-set-reps input-mini grow" type="number" step="any" placeholder="0" />
+      <label class="check-wrap">
+        <input class="train-set-done" type="checkbox" />
+      </label>
     </div>
   </template>
 

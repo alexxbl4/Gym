@@ -6,7 +6,7 @@ function isStorageAvailable() {
     localStorage.setItem(testKey, 'ok');
     localStorage.removeItem(testKey);
     return true;
-  } catch {
+  } catch (e) {
     return false;
   }
 }
@@ -18,7 +18,7 @@ function createEmptyAppData() {
     _schemaVersion: APP_SCHEMA_VERSION,
     routines: {},
     logs: [],
-    customExercises: [],
+    customExercises: []
   };
 }
 
@@ -27,15 +27,15 @@ function normalizeExercise(exercise, fallbackId) {
     id: exercise?.id || fallbackId,
     name: exercise?.name || 'Ejercicio',
     rest: Number(exercise?.rest ?? 90),
-    trackType: exercise?.trackType || 'weight_reps', // Novedad: asignamos tipo por defecto
-    sets: Array.isArray(exercise?.sets) && exercise.sets.length
+    trackType: exercise?.trackType || 'weight_reps',
+    sets: Array.isArray(exercise?.sets) && exercise.sets.length > 0
       ? exercise.sets.map(setItem => ({
           weight: setItem?.weight ?? '',
           reps: setItem?.reps ?? '',
           timeMins: setItem?.timeMins ?? '',
-          timeSecs: setItem?.timeSecs ?? '',
+          timeSecs: setItem?.timeSecs ?? ''
         }))
-      : [{ weight: '', reps: '', timeMins: '', timeSecs: '' }],
+      : [{ weight: '', reps: '', timeMins: '', timeSecs: '' }]
   };
 }
 
@@ -46,7 +46,7 @@ function normalizeRoutine(routine, key) {
     name: routine?.name || 'Rutina',
     exercises: exercises.map((ex, index) => normalizeExercise(ex, `${key}_ex_${index + 1}`)),
     createdAt: routine?.createdAt || new Date().toISOString(),
-    updatedAt: routine?.updatedAt || new Date().toISOString(),
+    updatedAt: routine?.updatedAt || new Date().toISOString()
   };
 }
 
@@ -59,10 +59,10 @@ function normalizeLog(log, index) {
     endedAt: log?.endedAt || new Date().toISOString(),
     durationSec: Number(log?.durationSec || 0),
     completedSets: Number(log?.completedSets || 0),
-    volume: Number(log?.volume || 0), // Volumen (solo aplica a weight_reps)
-    totalReps: Number(log?.totalReps || 0), // Nuevo para reps_only
-    totalTimeSecs: Number(log?.totalTimeSecs || 0), // Nuevo para time_only
-    exercises: Array.isArray(log?.exercises) ? log.exercises : [],
+    volume: Number(log?.volume || 0),
+    totalReps: Number(log?.totalReps || 0),
+    totalTimeSecs: Number(log?.totalTimeSecs || 0),
+    exercises: Array.isArray(log?.exercises) ? log.exercises : []
   };
 }
 
@@ -76,31 +76,30 @@ function normalizeCustomExercise(item, index) {
 }
 
 export function normalizeImportedData(rawData) {
-  if (!rawData || typeof rawData !== 'object') return createEmptyAppData();
+  if (!rawData || typeof rawData !== 'object') {
+    return createEmptyAppData();
+  }
 
   if (rawData._schemaVersion || rawData.routines || rawData.logs || rawData.customExercises) {
+    const rawRoutines = rawData.routines || {};
+    const routinesEntries = Object.entries(rawRoutines).map(([key, routine]) => [key, normalizeRoutine(routine, key)]);
+    
     return {
       _schemaVersion: APP_SCHEMA_VERSION,
-      routines: Object.fromEntries(
-        Object.entries(rawData.routines || {}).map(([key, routine]) => [key, normalizeRoutine(routine, key)])
-      ),
-      logs: Array.isArray(rawData.logs) ? rawData.logs.map(normalizeLog) : [],
-      customExercises: Array.isArray(rawData.customExercises)
-        ? rawData.customExercises.map(normalizeCustomExercise)
-        : [],
+      routines: Object.fromEntries(routinesEntries),
+      logs: Array.isArray(rawData.logs) ? rawData.logs.map((log, i) => normalizeLog(log, i)) : [],
+      customExercises: Array.isArray(rawData.customExercises) ? rawData.customExercises.map((ex, i) => normalizeCustomExercise(ex, i)) : []
     };
   }
 
   const maybeOldRoutines = rawData;
-  const routines = Object.fromEntries(
-    Object.entries(maybeOldRoutines).map(([key, routine]) => [key, normalizeRoutine(routine, key)])
-  );
+  const routinesEntries = Object.entries(maybeOldRoutines).map(([key, routine]) => [key, normalizeRoutine(routine, key)]);
 
   return {
     _schemaVersion: APP_SCHEMA_VERSION,
-    routines,
+    routines: Object.fromEntries(routinesEntries),
     logs: [],
-    customExercises: [],
+    customExercises: []
   };
 }
 
@@ -112,7 +111,7 @@ export function loadAppData() {
     const migrated = normalizeImportedData(parsed);
     saveAppData(migrated);
     return migrated;
-  } catch {
+  } catch (e) {
     return createEmptyAppData();
   }
 }
@@ -122,7 +121,7 @@ export function saveAppData(data) {
   try {
     localStorage.setItem(STORAGE_KEYS.app, JSON.stringify(data));
     return true;
-  } catch {
+  } catch (e) {
     return false;
   }
 }
@@ -132,7 +131,7 @@ export function clearAppData() {
   try {
     localStorage.removeItem(STORAGE_KEYS.app);
     return true;
-  } catch {
+  } catch (e) {
     return false;
   }
 }
@@ -141,6 +140,6 @@ export function exportAppData() {
   return {
     exportedAt: new Date().toISOString(),
     app: 'MoonPro',
-     loadAppData(),
+    data: loadAppData()
   };
 }

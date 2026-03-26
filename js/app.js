@@ -52,8 +52,10 @@ let sessionInterval = null; let sessionSeconds = 0; let restInterval = null;
 
 function openScreen(name) {
   setScreen(name); showScreen(name);
-  if (name === 'routines') renderRoutines(); if (name === 'editor') renderEditor();
-  if (name === 'train') renderTrainScreen(); if (name === 'stats') renderStats();
+  if (name === 'routines') renderRoutines(); 
+  if (name === 'editor') renderEditor();
+  if (name === 'train') renderTrainScreen(); 
+  if (name === 'stats') renderStats();
 }
 
 function handleStartSession(routineId) {
@@ -125,7 +127,7 @@ function bindEvents() {
   els.resetAppBtn.addEventListener('click', () => {
     showConfirm({ title:'Borrar datos', body:'No se puede deshacer.', onConfirm: () => {
       resetAllData(); clearInterval(sessionInterval); stopRestFlow(); openScreen('routines'); showToast('🗑️ Borrado');
-      setTimeout(() => location.reload(), 1000); 
+      setTimeout(() => location.reload(), 500); 
     }});
   });
 
@@ -143,61 +145,83 @@ function bindEvents() {
     if (e.target.closest('.action-delete')) { showConfirm({ title:'Borrar', body:'', onConfirm:()=> { deleteRoutine(id); renderRoutines(); }}); }
   });
 
-  // GESTIÓN DEL EDITOR DE RUTINAS
+  // ===============================================
+  // EDITOR DE RUTINAS (CAPTURA DEFINITIVA DE EVENTOS)
+  // ===============================================
   els.exerciseList.addEventListener('input', e => {
-    const exId = e.target.closest('.exercise-card')?.dataset.exerciseId; if(!exId) return;
-    if(e.target.matches('.exercise-name')) updateDraftExercise(exId, {name: e.target.value});
-    if(e.target.matches('.exercise-rest')) updateDraftExercise(exId, {rest: Number(e.target.value)||0});
+    const el = e.target;
+    const exCard = el.closest('.exercise-card');
+    if(!exCard) return;
+    const exId = exCard.dataset.exerciseId;
     
-    const row = e.target.closest('.set-row');
+    // Nombres y descansos
+    if(el.className.includes('exercise-name')) { updateDraftExercise(exId, {name: el.value}); return; }
+    if(el.className.includes('exercise-rest')) { updateDraftExercise(exId, {rest: Number(el.value)||0}); return; }
+    
+    // Inputs de las series
+    const row = el.closest('.set-row');
     if(row) {
       const idx = Number(row.dataset.setIndex);
-      if(e.target.matches('.set-weight')) updateSet(exId, idx, 'weight', e.target.value);
-      if(e.target.matches('.set-reps')) updateSet(exId, idx, 'reps', e.target.value);
-      if(e.target.matches('.set-time-min')) updateSet(exId, idx, 'timeMins', e.target.value);
-      if(e.target.matches('.set-time-sec')) updateSet(exId, idx, 'timeSecs', e.target.value);
+      if(el.className.includes('set-weight')) updateSet(exId, idx, 'weight', el.value);
+      if(el.className.includes('set-reps')) updateSet(exId, idx, 'reps', el.value);
+      if(el.className.includes('set-time-min')) updateSet(exId, idx, 'timeMins', el.value);
+      if(el.className.includes('set-time-sec')) updateSet(exId, idx, 'timeSecs', el.value);
     }
   });
 
-  // CAMBIO DE TIPO DE REGISTRO EN EL SELECT DEL EDITOR
   els.exerciseList.addEventListener('change', e => {
-    if (e.target.matches('.exercise-track-type')) {
-      const exId = e.target.closest('.exercise-card')?.dataset.exerciseId;
+    const el = e.target;
+    if (el.className.includes('exercise-track-type')) {
+      const exId = el.closest('.exercise-card')?.dataset.exerciseId;
       if(exId) {
-        updateDraftExercise(exId, {trackType: e.target.value});
-        renderEditor(); // Redibujar para que cambien las columnas
+        updateDraftExercise(exId, {trackType: el.value});
+        renderEditor(); 
       }
     }
   });
 
   els.exerciseList.addEventListener('click', e => {
-    const exId = e.target.closest('.exercise-card')?.dataset.exerciseId; if(!exId) return;
-    if(e.target.closest('.action-move-up')) { moveDraftExercise(exId, 'up'); renderEditor(); }
-    if(e.target.closest('.action-move-down')) { moveDraftExercise(exId, 'down'); renderEditor(); }
-    if(e.target.closest('.action-remove-exercise')) { removeDraftExercise(exId); renderEditor(); }
-    if(e.target.closest('.action-add-set')) { addSetToExercise(exId); renderEditor(); }
-    if(e.target.closest('.action-remove-set')) { removeSetFromExercise(exId, Number(e.target.closest('.set-row').dataset.setIndex)); renderEditor(); }
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const exId = btn.closest('.exercise-card')?.dataset.exerciseId; if(!exId) return;
+    
+    if(btn.className.includes('action-move-up')) { moveDraftExercise(exId, 'up'); renderEditor(); }
+    if(btn.className.includes('action-move-down')) { moveDraftExercise(exId, 'down'); renderEditor(); }
+    if(btn.className.includes('action-remove-exercise')) { removeDraftExercise(exId); renderEditor(); }
+    if(btn.className.includes('action-add-set')) { addSetToExercise(exId); renderEditor(); }
+    if(btn.className.includes('action-remove-set')) { removeSetFromExercise(exId, Number(btn.closest('.set-row').dataset.setIndex)); renderEditor(); }
   });
 
-  // GESTIÓN DE LA PANTALLA DE ENTRENAMIENTO
+  // ===============================================
+  // PANTALLA DE ENTRENAR (CAPTURA DEFINITIVA DE EVENTOS)
+  // ===============================================
   els.trainExerciseList.addEventListener('input', e => {
-    const exId = e.target.closest('.train-card')?.dataset.exerciseId; const idx = Number(e.target.closest('.train-set-row')?.dataset.setIndex);
-    if(!exId || isNaN(idx)) return;
-    if(e.target.matches('.train-set-weight')) updateActiveSet(exId, idx, 'weight', e.target.value);
-    if(e.target.matches('.train-set-reps')) updateActiveSet(exId, idx, 'reps', e.target.value);
-    if(e.target.matches('.train-set-time-min')) updateActiveSet(exId, idx, 'timeMins', e.target.value);
-    if(e.target.matches('.train-set-time-sec')) updateActiveSet(exId, idx, 'timeSecs', e.target.value);
+    const el = e.target;
+    const row = el.closest('.train-set-row');
+    const card = el.closest('.train-card');
+    if(!row || !card) return;
+    
+    const exId = card.dataset.exerciseId; 
+    const idx = Number(row.dataset.setIndex);
+    
+    if(el.className.includes('train-set-weight')) updateActiveSet(exId, idx, 'weight', el.value);
+    if(el.className.includes('train-set-reps')) updateActiveSet(exId, idx, 'reps', el.value);
+    if(el.className.includes('train-set-time-min')) updateActiveSet(exId, idx, 'timeMins', el.value);
+    if(el.className.includes('train-set-time-sec')) updateActiveSet(exId, idx, 'timeSecs', el.value);
   });
 
   els.trainExerciseList.addEventListener('change', e => {
-    if(e.target.matches('.train-set-done')) {
-      const exId = e.target.closest('.train-card').dataset.exerciseId; const idx = Number(e.target.closest('.train-set-row').dataset.setIndex);
-      toggleActiveSetDone(exId, idx, e.target.checked);
-      if(e.target.checked) startRestFlow(state.activeSession.exercises.find(ex=>ex.id===exId)?.rest || 90);
+    const el = e.target;
+    if(el.className.includes('train-set-done')) {
+      const exId = el.closest('.train-card').dataset.exerciseId; 
+      const idx = Number(el.closest('.train-set-row').dataset.setIndex);
+      toggleActiveSetDone(exId, idx, el.checked);
+      if(el.checked) startRestFlow(state.activeSession.exercises.find(ex=>ex.id===exId)?.rest || 90);
       renderTrainScreen();
     }
   });
 
+  // HISTORIAL Y ESTADÍSTICAS
   els.exerciseProgressList.addEventListener('click', e => {
     const name = e.target.closest('.history-item')?.dataset.exerciseName; if(name) openExerciseDetailModal(name);
   });
@@ -209,8 +233,10 @@ function bindEvents() {
     setLibraryCategory(btn.dataset.cat); renderLibrary();
   });
   els.libraryList.addEventListener('click', e => {
-    const card = e.target.closest('.library-item'); if (!card) return;
-    if (e.target.closest('.action-library-add')) {
+    const btn = e.target.closest('.action-library-add');
+    if (!btn) return;
+    const card = btn.closest('.library-item');
+    if (card) {
       addLibraryExerciseToDraft(card.dataset.name, card.dataset.tracktype);
       renderEditor(); closeLibraryModal(); showToast('✅ Añadido');
     }

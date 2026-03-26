@@ -143,15 +143,30 @@ function bindEvents() {
     if (e.target.closest('.action-delete')) { showConfirm({ title:'Borrar', body:'', onConfirm:()=> { deleteRoutine(id); renderRoutines(); }}); }
   });
 
+  // GESTIÓN DEL EDITOR DE RUTINAS
   els.exerciseList.addEventListener('input', e => {
     const exId = e.target.closest('.exercise-card')?.dataset.exerciseId; if(!exId) return;
     if(e.target.matches('.exercise-name')) updateDraftExercise(exId, {name: e.target.value});
     if(e.target.matches('.exercise-rest')) updateDraftExercise(exId, {rest: Number(e.target.value)||0});
+    
     const row = e.target.closest('.set-row');
     if(row) {
       const idx = Number(row.dataset.setIndex);
       if(e.target.matches('.set-weight')) updateSet(exId, idx, 'weight', e.target.value);
       if(e.target.matches('.set-reps')) updateSet(exId, idx, 'reps', e.target.value);
+      if(e.target.matches('.set-time-min')) updateSet(exId, idx, 'timeMins', e.target.value);
+      if(e.target.matches('.set-time-sec')) updateSet(exId, idx, 'timeSecs', e.target.value);
+    }
+  });
+
+  // CAMBIO DE TIPO DE REGISTRO EN EL SELECT DEL EDITOR
+  els.exerciseList.addEventListener('change', e => {
+    if (e.target.matches('.exercise-track-type')) {
+      const exId = e.target.closest('.exercise-card')?.dataset.exerciseId;
+      if(exId) {
+        updateDraftExercise(exId, {trackType: e.target.value});
+        renderEditor(); // Redibujar para que cambien las columnas
+      }
     }
   });
 
@@ -164,11 +179,14 @@ function bindEvents() {
     if(e.target.closest('.action-remove-set')) { removeSetFromExercise(exId, Number(e.target.closest('.set-row').dataset.setIndex)); renderEditor(); }
   });
 
+  // GESTIÓN DE LA PANTALLA DE ENTRENAMIENTO
   els.trainExerciseList.addEventListener('input', e => {
     const exId = e.target.closest('.train-card')?.dataset.exerciseId; const idx = Number(e.target.closest('.train-set-row')?.dataset.setIndex);
     if(!exId || isNaN(idx)) return;
     if(e.target.matches('.train-set-weight')) updateActiveSet(exId, idx, 'weight', e.target.value);
     if(e.target.matches('.train-set-reps')) updateActiveSet(exId, idx, 'reps', e.target.value);
+    if(e.target.matches('.train-set-time-min')) updateActiveSet(exId, idx, 'timeMins', e.target.value);
+    if(e.target.matches('.train-set-time-sec')) updateActiveSet(exId, idx, 'timeSecs', e.target.value);
   });
 
   els.trainExerciseList.addEventListener('change', e => {
@@ -184,29 +202,17 @@ function bindEvents() {
     const name = e.target.closest('.history-item')?.dataset.exerciseName; if(name) openExerciseDetailModal(name);
   });
 
-  // ==========================================
-  // EVENTOS DE LA BIBLIOTECA (¡Los que faltaban!)
-  // ==========================================
-  els.librarySearch.addEventListener('input', e => {
-    setLibraryQuery(e.target.value);
-    renderLibrary();
-  });
-
+  // BIBLIOTECA
+  els.librarySearch.addEventListener('input', e => { setLibraryQuery(e.target.value); renderLibrary(); });
   els.libraryCats.addEventListener('click', e => {
-    const btn = e.target.closest('.chip');
-    if (!btn) return;
-    setLibraryCategory(btn.dataset.cat);
-    renderLibrary();
+    const btn = e.target.closest('.chip'); if (!btn) return;
+    setLibraryCategory(btn.dataset.cat); renderLibrary();
   });
-
   els.libraryList.addEventListener('click', e => {
-    const card = e.target.closest('.library-item');
-    if (!card) return;
+    const card = e.target.closest('.library-item'); if (!card) return;
     if (e.target.closest('.action-library-add')) {
-      addLibraryExerciseToDraft(card.dataset.name);
-      renderEditor();
-      closeLibraryModal();
-      showToast('✅ Ejercicio añadido');
+      addLibraryExerciseToDraft(card.dataset.name, card.dataset.tracktype);
+      renderEditor(); closeLibraryModal(); showToast('✅ Añadido');
     }
   });
 }

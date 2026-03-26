@@ -27,13 +27,15 @@ function normalizeExercise(exercise, fallbackId) {
     id: exercise?.id || fallbackId,
     name: exercise?.name || 'Ejercicio',
     rest: Number(exercise?.rest ?? 90),
-    cardio: Boolean(exercise?.cardio),
+    trackType: exercise?.trackType || 'weight_reps', // Novedad: asignamos tipo por defecto
     sets: Array.isArray(exercise?.sets) && exercise.sets.length
       ? exercise.sets.map(setItem => ({
           weight: setItem?.weight ?? '',
           reps: setItem?.reps ?? '',
+          timeMins: setItem?.timeMins ?? '',
+          timeSecs: setItem?.timeSecs ?? '',
         }))
-      : [{ weight: '', reps: '' }],
+      : [{ weight: '', reps: '', timeMins: '', timeSecs: '' }],
   };
 }
 
@@ -57,7 +59,9 @@ function normalizeLog(log, index) {
     endedAt: log?.endedAt || new Date().toISOString(),
     durationSec: Number(log?.durationSec || 0),
     completedSets: Number(log?.completedSets || 0),
-    volume: Number(log?.volume || 0),
+    volume: Number(log?.volume || 0), // Volumen (solo aplica a weight_reps)
+    totalReps: Number(log?.totalReps || 0), // Nuevo para reps_only
+    totalTimeSecs: Number(log?.totalTimeSecs || 0), // Nuevo para time_only
     exercises: Array.isArray(log?.exercises) ? log.exercises : [],
   };
 }
@@ -67,6 +71,7 @@ function normalizeCustomExercise(item, index) {
     id: item?.id || `cust_${index + 1}`,
     name: item?.name || 'Ejercicio',
     cat: item?.cat || 'Mis ejercicios',
+    trackType: item?.trackType || 'weight_reps'
   };
 }
 
@@ -136,6 +141,6 @@ export function exportAppData() {
   return {
     exportedAt: new Date().toISOString(),
     app: 'MoonPro',
-    data: loadAppData(),
+     loadAppData(),
   };
 }
